@@ -1,8 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
     <metadata>
         <id>System.Threading.Atomics</id>
-        <version>1.0.0</version>
+        <version>$version$</version>
         <title>Atomics.NET</title>
         <authors>karlen</authors>
         <owners>karlen</owners>
@@ -15,5 +15,6 @@
     </metadata>
     <files>
         <file src="..\src\System.Threading.Atomics\bin\Release\System.Threading.Atomics.dll" target="lib\System.Threading.Atomics.dll" />
+        <file src="..\src\System.Threading.Atomics\bin\Release\System.Threading.Atomics.XML" target="lib\System.Threading.Atomics.XML" />
     </files>
 </package>
