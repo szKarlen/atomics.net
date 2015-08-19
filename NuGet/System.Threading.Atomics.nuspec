@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+    <metadata>
+        <id>System.Threading.Atomics</id>
+        <version>1.0.0</version>
+        <title>Atomics.NET</title>
+        <authors>karlen</authors>
+        <owners>karlen</owners>
+        <licenseUrl>https://raw.githubusercontent.com/szKarlen/atomics.net/master/LICENSE</licenseUrl>
+        <projectUrl>https://github.com/szKarlen/atomics.net</projectUrl>
+        <requireLicenseAcceptance>true</requireLicenseAcceptance>
+        <description>This package enables .NET projects to use atomic primitives for different types instances.</description>
+        <copyright>Copyright © Karlen Simonyan 2015</copyright>
+        <tags>atomics threading</tags>
+    </metadata>
+    <files>
+        <file src="..\src\System.Threading.Atomics\bin\Release\System.Threading.Atomics.dll" target="lib\System.Threading.Atomics.dll" />
+    </files>
+</package>
