@@ -6,7 +6,7 @@ namespace System.Threading.Atomics
     /// An <see cref="bool"/> value wrapper with atomic access
     /// </summary>
     [DebuggerDisplay("{Value}")]
-    public sealed class AtomicBoolean : IAtomic<bool>
+    public sealed class AtomicBoolean : IAtomic<bool>, IEquatable<bool>
     {
         private volatile AtomicInteger _storageInteger;
 
@@ -55,6 +55,11 @@ namespace System.Threading.Atomics
         bool IAtomicsOperator<bool>.Read(ref bool location1)
         {
             return Volatile.Read(ref location1);
+        }
+
+        bool IEquatable<bool>.Equals(bool other)
+        {
+            return this.Value == other;
         }
     }
 }
