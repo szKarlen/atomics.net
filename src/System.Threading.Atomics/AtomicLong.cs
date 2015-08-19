@@ -120,7 +120,7 @@ namespace System.Threading.Atomics
             if (entered)
                 Monitor.Exit(atomicLong._instanceLock);
 
-            return currentValue;
+            return result;
         }
 
         public static long operator /(AtomicLong atomicLong, int value)
@@ -145,7 +145,7 @@ namespace System.Threading.Atomics
             if (entered)
                 Monitor.Exit(atomicLong._instanceLock);
 
-            return currentValue;
+            return result;
         }
 
         public static implicit operator long(AtomicLong atomicLong)

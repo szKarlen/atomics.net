@@ -120,7 +120,7 @@ namespace System.Threading.Atomics
             if (entered)
                 Monitor.Exit(atomicInteger._instanceLock);
 
-            return currentValue;
+            return result;
         }
 
         public static int operator /(AtomicInteger atomicInteger, int value)
@@ -145,7 +145,7 @@ namespace System.Threading.Atomics
             if (entered)
                 Monitor.Exit(atomicInteger._instanceLock);
 
-            return currentValue;
+            return result;
         }
 
         public static implicit operator int(AtomicInteger atomicInteger)
