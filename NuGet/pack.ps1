@@ -1,4 +1,4 @@
-$root = resolve-path ..
+$root = resolve-path .
 
 $dllPath = "$root\src\System.Threading.Atomics\bin\Release\System.Threading.Atomics.dll"
 
