@@ -125,6 +125,8 @@ namespace System.Threading.Atomics
 
         public static int operator /(AtomicInteger atomicInteger, int value)
         {
+            if (value == 0) throw new DivideByZeroException();
+
             // we do not use C# lock statment to prohibit the use of try/finally, which affects performance
             bool entered = false;
             int currentValue = atomicInteger.Value;

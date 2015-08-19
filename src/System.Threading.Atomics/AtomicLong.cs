@@ -125,6 +125,8 @@ namespace System.Threading.Atomics
 
         public static long operator /(AtomicLong atomicLong, int value)
         {
+            if (value == 0) throw new DivideByZeroException();
+
             // we do not use C# lock statment to prohibit the use of try/finally, which affects performance
             bool entered = false;
             long currentValue = atomicLong.Value;
