@@ -5,6 +5,8 @@ VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "System.Threading.Atomics", "System.Threading.Atomics\System.Threading.Atomics.csproj", "{324841F4-AE05-4C10-9453-A77B1A6951A9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "System.Threading.Atomics.Tests", "System.Threading.Atomics.Tests\System.Threading.Atomics.Tests.csproj", "{69BAF371-84B9-422F-85ED-1EA194E84769}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{324841F4-AE05-4C10-9453-A77B1A6951A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{324841F4-AE05-4C10-9453-A77B1A6951A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{324841F4-AE05-4C10-9453-A77B1A6951A9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{69BAF371-84B9-422F-85ED-1EA194E84769}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{69BAF371-84B9-422F-85ED-1EA194E84769}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{69BAF371-84B9-422F-85ED-1EA194E84769}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{69BAF371-84B9-422F-85ED-1EA194E84769}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
