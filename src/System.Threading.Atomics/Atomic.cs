@@ -114,7 +114,7 @@ namespace System.Threading.Atomics
         T IAtomicsOperator<T>.CompareExchange(ref T location1, T value, T comparand)
         {
             T temp = location1;
-            if (!temp.Equals(comparand))
+            if (!value.Equals(comparand))
             {
                 Interlocked.MemoryBarrier();
                 location1 = value;
