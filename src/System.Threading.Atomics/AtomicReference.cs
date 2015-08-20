@@ -96,7 +96,7 @@ namespace System.Threading.Atomics
             }
             if (_order.IsAcquireRelease())
             {
-                WriteAcqRel(setter);
+                return WriteAcqRel(setter);
             }
             return null;
         }
