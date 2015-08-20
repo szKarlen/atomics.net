@@ -41,19 +41,53 @@ Unsigned integers are supported also.
 
 Sample usage
 -------
+
+Here is the basic setup and usage of atomic primitives.
+
+``` csharp
+using System;
+using System.IO;
+
+class Counter
+{
+    private readonly AtomicInteger _value;
+    private readonly AtomicBoolean _isReadOnly;
+    
+    public Counter(int initialValue = int.MaxValue, bool isReadOnly = false)
+    {
+        _value = initialValue;
+        _isReadOnly = isReadOnly;
+    }
+    
+    public void Increment(int value)
+    {
+        if (!_isReadOnly)
+            _value++;
+    }
+    
+    public void Show()
+    {
+        Console.WriteLine(_value); // Console.WriteLine(int) overload will be used
+    }
+}
+```
+
+Notes to usage
+-------
+
 `Atomic<T>` with `Int32`, `Int64` and `Boolean` specialization falls back to using `AtomicInteger`, `AtomicLong` and `AtomicBoolean` as internal storage respectively.
 
 The only difference for performance is that `AtomicInteger`, `AtomicLong` and `AtomicBoolean` are using Acquire/Release semantics by default, while default memory order flag for `Atomic<T>` is sequential consistency, which trasfers to internal storage as well.
 
 Consider the following:
 
-```
+``` csharp
 var atomicBool = new Atomic<bool>(false);
 // is equal to
 var atomicBoolSeqCst = new AtomicBoolean(false, MemoryOrder.SeqCst);
 ```
 and
-```
+``` csharp
 var atomicBoolAcqRel = new Atomic<bool>(false, MemoryOrder.AcqRel);
 // is equal to
 var atomicBool = new AtomicBoolean(false);
