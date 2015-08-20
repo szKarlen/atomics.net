@@ -8,7 +8,7 @@ atomics.net design and implementation
 
 Project aims to be very close to C++ 11 standard atomics by design and provides [memory order](http://en.cppreference.com/w/cpp/atomic/memory_order) flags for primitives. Some of them are prohibited and not supported. For example, the Relaxed flag from C++ 11 compatible is marked as obsolete with compiler warning and exception at runtime.
 
-Even tough minimum supported version is .NET 4.5, you can compile for .NET 4.0 and earlier. The Itanium-related reordering fences will be present (discussed a little bit later [below](#itanium)).
+Although the library is a PCL itself, the minimum required version of .NET - 4.5. But you can compile for .NET 4.0 and earlier. The Itanium-related stuff (reorderings, barrier/fences usages, etc.) will be present (discussed a little bit later [below](#itanium)).
 
 The default memory semantics for atomics.net's primitives is Acquire/Release, which fits very well with .NET Framework and CLR 2.0 memory model.
 
@@ -61,6 +61,6 @@ As we saw above the CLR 2.0 memory model is very close to x86 systems. Among oth
 
 Starting from .NET 4.5 support for Itanium was [droppped](https://msdn.microsoft.com/en-us/library/8z6watww.aspx).
 
-This means that there is no need for additional explicit fences to be used for processor cache coherence support. X86-64 do this by design.
+This means that there is no need for additional explicit barrier/fences to be used for processor cache coherence support. X86-64 do this by design.
 
 The only situation about acquire/release semantics for .NET was the following [behaviour](#itanium): **_CLR JIT on Itanium does emit ST.REL for non-volatile writes_**, because Itanium distinguishes between an ordinary load (LD) and load-acquire (LD.ACQ), and an ordinary store (ST) and store-release (ST.REL) ([source](https://msdn.microsoft.com/en-us/magazine/jj883956.aspx)).
