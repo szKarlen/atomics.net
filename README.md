@@ -7,15 +7,15 @@ This package enables .NET projects to use atomic primitives.
 Design and implementation
 -------
 
-Project aims to be very close to C++ 11 standard atomics by design and provides [memory order](http://en.cppreference.com/w/cpp/atomic/memory_order) flags for primitives.
+Project aims to be very close to C++ 11 standard atomics by design and usage. For example, The [memory order](http://en.cppreference.com/w/cpp/atomic/memory_order) flag could be provided to primitives.
 
-Although the library is a PCL itself, the minimum version of .NET - 4.5. But you can compile for .NET 4.0 and earlier. The Itanium-related reordering fences will be present (see [docs](Documentation/memorymodel101.md)).
+Although the library is a PCL itself, the minimum required version of .NET - 4.5. But you can compile for .NET 4.0 and earlier. The Itanium-related stuff (reorderings, fences and barrier usages, etc.) will be present (see [docs](Documentation/memorymodel101.md)).
 
-The default memory semantics for atomics.net's primitives is Acquire/Release, which fits very well with .NET Framework and CLR 2.0 memory model.
+The default memory semantics for library's primitives is Acquire/Release, which fits very well with .NET Framework and CLR 2.0 memory model.
 
 The option for sequential consistency is implemented as a combination of Acquire/Release with sequential order emulation by mutual exclusion locks.
 
-Specifing Acquire only or Release only flag falls back to full Acquire/Release semantics.
+Specifing Acquire only or Release only flag falls back to full Acquire/Release semantics for get/set operations or combinations of.
 
 Atomic primitives
 -------
@@ -35,9 +35,7 @@ The `Atomic<T>` class should be used for structs (i.e. value types).
 
 All primitives implement the implicit conversion operator overloads with atomic accesses.
 
-Integers up to 16 bit are supported.
-
-Unsigned integers are supported also.
+Integers support is ranging from 8 to 64 bit with unsigned ones as well.
 
 Sample usage
 -------
@@ -72,7 +70,7 @@ class Counter
 }
 ```
 
-Notes to usage
+Notes for usage
 -------
 
 `Atomic<T>` with `Int32`, `Int64` and `Boolean` specialization falls back to using `AtomicInteger`, `AtomicLong` and `AtomicBoolean` as internal storage respectively.
@@ -99,6 +97,7 @@ CAS notes
 -------
 Usually **compare-and-swap (CAS)** is used in lock-free algorithms for locks, interlocked operations implementations, etc., especially `compare_exchange_weak` variation.
 Provided by the .NET Framework [`Interlocked.CompareExchange`](https://msdn.microsoft.com/ru-ru/library/system.threading.interlocked.compareexchange(v=vs.110).aspx) method is the C++ [`compare_and_exchange_strong`](http://en.cppreference.com/w/cpp/atomic/atomic/compare_exchange) analog. The `compare_exchange_weak` is not supported.
+Current implementation of atomics.net uses CAS approach for lock-free atomic operations.
 
 Contributing
 -------
