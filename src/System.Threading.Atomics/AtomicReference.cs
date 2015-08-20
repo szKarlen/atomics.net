@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 namespace System.Threading.Atomics
 {
     [DebuggerDisplay("{Value}")]
-    public sealed class AtomicReference<T> where T : class
+    public sealed class AtomicReference<T> : IEquatable<T> where T : class
     {
         private volatile MemoryOrder _order;
         private T _value;
@@ -106,6 +106,26 @@ namespace System.Threading.Atomics
                 tempValue = Interlocked.CompareExchange(ref this._value, setter(currentValue), currentValue);
             } while (tempValue != currentValue);
             return tempValue;
+        }
+
+        public static bool operator ==(AtomicReference<T> x, T y)
+        {
+            return (!object.ReferenceEquals(x, null) && x.Value == y);
+        }
+
+        public static bool operator !=(AtomicReference<T> x, T y)
+        {
+            if (object.ReferenceEquals(x, null))
+                return false;
+
+            T value = x.Value;
+            return value != y;
+        }
+
+        bool IEquatable<T>.Equals(T other)
+        {
+            T value = this.Value;
+            return value == other || (other != null && value != null && other.Equals(value));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
