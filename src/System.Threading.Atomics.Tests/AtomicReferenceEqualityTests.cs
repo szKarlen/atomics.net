@@ -102,7 +102,7 @@ namespace System.Threading.Atomics.Tests
             Assert.False(object.ReferenceEquals(atomicReference, null));
         }
 
-        // Sequental Consistency mode
+        // Sequential Consistency mode
         [Fact]
         public void AtomicReference_Implicit_Ref_SeqCst_Should_Success()
         {

@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 namespace System.Threading.Atomics
 {
     [DebuggerDisplay("{Value}")]
-    public sealed class Atomic<T> : IAtomic<T> where T : struct, IEquatable<T>
+    public sealed class Atomic<T> : IAtomic<T>, IEquatable<T> where T : struct, IEquatable<T>
     {
         private T _value;
         private static readonly PrimitiveAtomics PrimitiveIntrinsics = new PrimitiveAtomics();
@@ -142,6 +142,11 @@ namespace System.Threading.Atomics
         public static implicit operator Atomic<T>(T value)
         {
             return new Atomic<T>(value);
+        }
+
+        bool IEquatable<T>.Equals(T other)
+        {
+            return this.Value.Equals(other);
         }
 
         private class PrimitiveAtomics : IAtomicsOperator<int>,
