@@ -3,6 +3,10 @@ using System.Runtime.CompilerServices;
 
 namespace System.Threading.Atomics
 {
+    /// <summary>
+    /// A wrapper for structs with atomic operations
+    /// </summary>
+    /// <typeparam name="T">The underlying struct's type</typeparam>
     [DebuggerDisplay("{Value}")]
     public sealed class Atomic<T> : IAtomic<T>, IEquatable<T> where T : struct, IEquatable<T>
     {

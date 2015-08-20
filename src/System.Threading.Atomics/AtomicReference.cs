@@ -3,6 +3,10 @@ using System.Runtime.CompilerServices;
 
 namespace System.Threading.Atomics
 {
+    /// <summary>
+    /// A wrapper for references with atomic operations
+    /// </summary>
+    /// <typeparam name="T">The underlying reference's type</typeparam>
     [DebuggerDisplay("{Value}")]
     public sealed class AtomicReference<T> : IEquatable<T> where T : class
     {
