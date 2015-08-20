@@ -99,6 +99,7 @@ namespace System.Threading.Atomics
                 {
                     lock (_instanceLock)
                     {
+                        Interlocked.MemoryBarrier();
                         _value = value;
                     }
                 }
