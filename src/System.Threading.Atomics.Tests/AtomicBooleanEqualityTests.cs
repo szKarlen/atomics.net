@@ -97,7 +97,7 @@ namespace System.Threading.Atomics.Tests
             Assert.True(atomicBoolean != true);
         }
 
-        // Sequental Consistency mode
+        // Sequential Consistency mode
         [Fact]
         public void AtomicBoolean_Implicit_Bool_SeqCst_Should_Success()
         {

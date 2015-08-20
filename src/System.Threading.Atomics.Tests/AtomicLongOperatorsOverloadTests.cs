@@ -128,7 +128,7 @@ namespace System.Threading.Atomics.Tests
             Assert.True(atomicLong != long.MaxValue);
         }
 
-        // Sequental Consistency mode
+        // Sequential Consistency mode
         [Fact]
         public void AtomicLong_Pre_Increment_SeqCst_Should_Success()
         {

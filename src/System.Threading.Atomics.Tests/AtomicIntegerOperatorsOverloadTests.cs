@@ -128,7 +128,7 @@ namespace System.Threading.Atomics.Tests
             Assert.True(atomicInteger != int.MaxValue);
         }
 
-        // Sequental Consistency mode
+        // Sequential Consistency mode
         [Fact]
         public void AtomicInteger_Pre_Increment_SeqCst_Should_Success()
         {
