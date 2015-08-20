@@ -6,7 +6,7 @@ For more detailed description of terms, please refer to [glossary](glossary.md).
 atomics.net design and implementation
 -------
 
-Project aims to be very close to C++ 11 standard atomics by design and provides memory order parameter for construction. Some flags are prohibited and not supported. For example, C++ 11 compatible Relaxed flag is marked as obsolete with compiler warning or exception at runtime.
+Project aims to be very close to C++ 11 standard atomics by design and provides [memory order](http://en.cppreference.com/w/cpp/atomic/memory_order) flags for primitives. Some of them are prohibited and not supported. For example, the Relaxed flag from C++ 11 compatible is marked as obsolete with compiler warning and exception at runtime.
 
 Even tough minimum supported version is .NET 4.5, you can compile for .NET 4.0 and earlier. The Itanium-related reordering fences will be present (discussed a little bit later [below](#itanium)).
 
