@@ -283,7 +283,7 @@ namespace System.Threading.Atomics
             byte IAtomicsOperator<byte>.CompareExchange(ref byte location1, byte value, byte comparand)
             {
                 byte temp = location1;
-                if (value != comparand)
+                if (temp != comparand)
                     Volatile.Write(ref location1, value);
 
                 Interlocked.MemoryBarrier();
