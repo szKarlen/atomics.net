@@ -103,7 +103,7 @@ namespace System.Threading.Atomics.Tests
         }
 
         [Fact]
-        public void AtomicLong_Implicit_Int_AcqRel_Should_Success()
+        public void AtomicLong_Implicit_Long_AcqRel_Should_Success()
         {
             var atomicLong = new AtomicLong(long.MaxValue);
 
@@ -214,7 +214,7 @@ namespace System.Threading.Atomics.Tests
         }
 
         [Fact]
-        public void AtomicLong_Implicit_Int_SeqCst_Should_Success()
+        public void AtomicLong_Implicit_Long_SeqCst_Should_Success()
         {
             var atomicLong = new AtomicLong(long.MaxValue, MemoryOrder.SeqCst);
 

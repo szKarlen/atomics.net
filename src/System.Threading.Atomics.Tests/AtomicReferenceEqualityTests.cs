@@ -28,7 +28,7 @@ namespace System.Threading.Atomics.Tests
         }
 
         [Fact]
-        public void AtomicReference_IEquatable_Of_Int_Should_Compare()
+        public void AtomicReference_IEquatable_Of_Ref_Should_Compare()
         {
             IEquatable<object> firstAtomic = new AtomicReference<object>(new object());
             IEquatable<object> secondAtomic = new AtomicReference<object>(null);
@@ -73,7 +73,7 @@ namespace System.Threading.Atomics.Tests
         }
 
         [Fact]
-        public void AtomicReference_Implicit_Int_AcqRel_Should_Success()
+        public void AtomicReference_Implicit_Ref_AcqRel_Should_Success()
         {
             var source = new object();
             var atomicReference = new AtomicReference<object>(source);
@@ -104,7 +104,7 @@ namespace System.Threading.Atomics.Tests
 
         // Sequental Consistency mode
         [Fact]
-        public void AtomicReference_Implicit_Int_SeqCst_Should_Success()
+        public void AtomicReference_Implicit_Ref_SeqCst_Should_Success()
         {
             var source = new object();
             var atomicReference = new AtomicReference<object>(source, MemoryOrder.SeqCst);

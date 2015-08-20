@@ -17,7 +17,7 @@ namespace System.Threading.Atomics
         /// <summary>
         /// Creates new instance of <see cref="Atomic{T}"/>
         /// </summary>
-        /// <param name="order">Affects the way store operation occur. Default is <see cref="MemoryOrder.SeqCst"/> semanticsm which hurt performance</param>
+        /// <param name="order">Affects the way store operation occur. Default is <see cref="MemoryOrder.SeqCst"/> semantics which hurt performance</param>
         public Atomic(MemoryOrder order = MemoryOrder.SeqCst)
         {
             if (!order.IsSpported()) throw new ArgumentException(string.Format("{0} is not supported", order));

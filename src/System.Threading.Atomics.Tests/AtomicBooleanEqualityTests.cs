@@ -27,7 +27,7 @@ namespace System.Threading.Atomics.Tests
         }
 
         [Fact]
-        public void AtomicBoolean_IEquatable_Of_Int_Should_Compare()
+        public void AtomicBoolean_IEquatable_Of_Bool_Should_Compare()
         {
             IEquatable<bool> firstAtomic = new AtomicBoolean(true);
             IEquatable<bool> secondAtomic = new AtomicBoolean(false);
@@ -72,7 +72,7 @@ namespace System.Threading.Atomics.Tests
         }
 
         [Fact]
-        public void AtomicBoolean_Implicit_Int_AcqRel_Should_Success()
+        public void AtomicBoolean_Implicit_Bool_AcqRel_Should_Success()
         {
             var atomicBoolean = new AtomicBoolean(true);
 
@@ -99,7 +99,7 @@ namespace System.Threading.Atomics.Tests
 
         // Sequental Consistency mode
         [Fact]
-        public void AtomicBoolean_Implicit_Int_SeqCst_Should_Success()
+        public void AtomicBoolean_Implicit_Bool_SeqCst_Should_Success()
         {
             var atomicBoolean = new AtomicBoolean(true, MemoryOrder.SeqCst);
 

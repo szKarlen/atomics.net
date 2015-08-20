@@ -32,7 +32,7 @@ namespace System.Threading.Atomics.Tests
         }
 
         [Fact]
-        public void AtomicLong_IEquatable_Of_Int_Should_Compare()
+        public void AtomicLong_IEquatable_Of_Long_Should_Compare()
         {
             IEquatable<long> firstAtomic = new AtomicLong(long.MaxValue);
             IEquatable<long> secondAtomic = new AtomicLong(long.MinValue);

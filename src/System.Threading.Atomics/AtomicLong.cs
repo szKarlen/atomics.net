@@ -102,7 +102,7 @@ namespace System.Threading.Atomics
 
         public static long operator *(AtomicLong atomicLong, long value)
         {
-            // we do not use C# lock statment to prohibit the use of try/finally, which affects performance
+            // we do not use C# lock statement to prohibit the use of try/finally, which affects performance
             bool entered = false;
             long currentValue = atomicLong.Value;
 
@@ -127,7 +127,7 @@ namespace System.Threading.Atomics
         {
             if (value == 0) throw new DivideByZeroException();
 
-            // we do not use C# lock statment to prohibit the use of try/finally, which affects performance
+            // we do not use C# lock statement to prohibit the use of try/finally, which affects performance
             bool entered = false;
             long currentValue = atomicLong.Value;
 
