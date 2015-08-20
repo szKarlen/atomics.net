@@ -149,6 +149,20 @@ namespace System.Threading.Atomics
             return this.Value.Equals(other);
         }
 
+        public static bool operator ==(Atomic<T> x, T y)
+        {
+            return (!object.ReferenceEquals(x, null) && x.Value.Equals(y));
+        }
+
+        public static bool operator !=(Atomic<T> x, T y)
+        {
+            if (object.ReferenceEquals(x, null))
+                return false;
+
+            T value = x.Value;
+            return !value.Equals(y);
+        }
+
         private class PrimitiveAtomics : IAtomicsOperator<int>,
             IAtomicsOperator<long>,
             IAtomicsOperator<double>,
