@@ -9,7 +9,7 @@ Design and implementation
 
 Project aims to be very close to C++ 11 standard atomics by design and provides [memory order](http://en.cppreference.com/w/cpp/atomic/memory_order) flags for primitives.
 
-Even tough the library is PCL the minimum supported version .NET 4.5. But you can compile for .NET 4.0 and earlier. The Itanium-related reordering fences will be present (see [docs](Documentation/memorymodel101.md)).
+Although the library is a PCL itself, the minimum version of .NET - 4.5. But you can compile for .NET 4.0 and earlier. The Itanium-related reordering fences will be present (see [docs](Documentation/memorymodel101.md)).
 
 The default memory semantics for atomics.net's primitives is Acquire/Release, which fits very well with .NET Framework and CLR 2.0 memory model.
 
