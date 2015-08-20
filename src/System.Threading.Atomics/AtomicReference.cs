@@ -99,7 +99,7 @@ namespace System.Threading.Atomics
 
         private T WriteAcqRel(Func<T, T> setter)
         {
-            T currentValue = this.Value;
+            T currentValue = this._value;
             T tempValue;
             do
             {
