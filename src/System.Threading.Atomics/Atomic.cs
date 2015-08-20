@@ -114,7 +114,7 @@ namespace System.Threading.Atomics
         T IAtomicsOperator<T>.CompareExchange(ref T location1, T value, T comparand)
         {
             T temp = location1;
-            if (!value.Equals(comparand))
+            if (!temp.Equals(comparand))
             {
                 Interlocked.MemoryBarrier();
                 location1 = value;
@@ -266,7 +266,7 @@ namespace System.Threading.Atomics
             sbyte IAtomicsOperator<sbyte>.CompareExchange(ref sbyte location1, sbyte value, sbyte comparand)
             {
                 sbyte temp = location1;
-                if (value != comparand)
+                if (temp != comparand)
                     Volatile.Write(ref location1, value);
 
                 Interlocked.MemoryBarrier();
@@ -300,7 +300,7 @@ namespace System.Threading.Atomics
             short IAtomicsOperator<short>.CompareExchange(ref short location1, short value, short comparand)
             {
                 short temp = location1;
-                if (value != comparand)
+                if (temp != comparand)
                     Volatile.Write(ref location1, value);
 
                 Interlocked.MemoryBarrier();
@@ -317,7 +317,7 @@ namespace System.Threading.Atomics
             ushort IAtomicsOperator<ushort>.CompareExchange(ref ushort location1, ushort value, ushort comparand)
             {
                 ushort temp = location1;
-                if (value != comparand)
+                if (temp != comparand)
                     Volatile.Write(ref location1, value);
 
                 Interlocked.MemoryBarrier();
