@@ -53,7 +53,7 @@ class Counter
     private AtomicInteger _value;
     private readonly AtomicBoolean _isReadOnly;
     
-    public Counter(int initialValue = int.MaxValue, bool isReadOnly = false)
+    public Counter(int initialValue = 0, bool isReadOnly = false)
     {
         _value = initialValue;
         _isReadOnly = isReadOnly;
