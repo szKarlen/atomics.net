@@ -50,7 +50,7 @@ using System.IO;
 
 class Counter
 {
-    private readonly AtomicInteger _value;
+    private AtomicInteger _value;
     private readonly AtomicBoolean _isReadOnly;
     
     public Counter(int initialValue = int.MaxValue, bool isReadOnly = false)
