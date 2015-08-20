@@ -57,6 +57,16 @@ namespace System.Threading.Atomics
             return Volatile.Read(ref location1);
         }
 
+        public static implicit operator bool(AtomicBoolean atomicInteger)
+        {
+            return atomicInteger.Value;
+        }
+
+        public static implicit operator AtomicBoolean(bool value)
+        {
+            return new AtomicBoolean(value);
+        }
+
         bool IEquatable<bool>.Equals(bool other)
         {
             return this.Value == other;
