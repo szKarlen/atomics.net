@@ -103,13 +103,15 @@ namespace System.Threading.Atomics
 
         private T WriteAcqRel(Func<T, T> setter)
         {
-            T currentValue = this._value;
-            T tempValue;
-            do
+            T currentValue = _value;
+            T tempValue = null;
+            while (tempValue != currentValue)
             {
-                tempValue = Interlocked.CompareExchange(ref this._value, setter(currentValue), currentValue);
-            } while (tempValue != currentValue);
-            return tempValue;
+                tempValue = Interlocked.CompareExchange(ref _value, setter(currentValue), currentValue);
+
+                currentValue = tempValue;
+            } 
+            return currentValue;
         }
 
         public static bool operator ==(AtomicReference<T> x, T y)
