@@ -10,7 +10,7 @@ namespace System.Threading.Atomics
     {
         public static bool IsAcquireRelease(this MemoryOrder order)
         {
-            return order >= MemoryOrder.Release && order <= MemoryOrder.AcqRel;
+            return order >= MemoryOrder.Acquire && order <= MemoryOrder.AcqRel;
         }
 
         public static bool IsSpported(this MemoryOrder order)
