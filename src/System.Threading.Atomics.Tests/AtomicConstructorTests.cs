@@ -14,8 +14,10 @@ namespace System.Threading.Atomics.Tests
         [Fact]
         public void Atomic_MemoryOrder_Should_Fail()
         {
+#pragma warning disable 612, 618
             Assert.Throws<ArgumentException>(() => new Atomic<Guid>(MemoryOrder.Relaxed));
             Assert.Throws<ArgumentException>(() => new Atomic<Guid>(MemoryOrder.Consume));
+#pragma warning restore 612, 618
         }
 
         [Fact]
@@ -36,8 +38,10 @@ namespace System.Threading.Atomics.Tests
         [Fact]
         public void Atomic_InitialValue_With_MemoryOrder_Should_Fail()
         {
+#pragma warning disable 612, 618
             Assert.Throws<ArgumentException>(() => new Atomic<Guid>(SessionValue, MemoryOrder.Relaxed));
             Assert.Throws<ArgumentException>(() => new Atomic<Guid>(SessionValue, MemoryOrder.Consume));
+#pragma warning restore 612, 618
         }
 
         [Fact]

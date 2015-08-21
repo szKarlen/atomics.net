@@ -12,8 +12,10 @@ namespace System.Threading.Atomics.Tests
         [Fact]
         public void AtomicLong_MemoryOrder_Should_Fail()
         {
+#pragma warning disable 612, 618
             Assert.Throws<ArgumentException>(() => new AtomicLong(MemoryOrder.Relaxed));
             Assert.Throws<ArgumentException>(() => new AtomicLong(MemoryOrder.Consume));
+#pragma warning restore 612, 618
         }
 
         [Fact]
@@ -34,8 +36,10 @@ namespace System.Threading.Atomics.Tests
         [Fact]
         public void AtomicLong_InitialValue_With_MemoryOrder_Should_Fail()
         {
+#pragma warning disable 612, 618
             Assert.Throws<ArgumentException>(() => new AtomicLong(long.MaxValue, MemoryOrder.Relaxed));
             Assert.Throws<ArgumentException>(() => new AtomicLong(long.MaxValue, MemoryOrder.Consume));
+#pragma warning restore 612, 618
         }
 
         [Fact]
