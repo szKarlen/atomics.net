@@ -6,7 +6,9 @@ namespace System.Threading.Atomics
     /// An <see cref="int"/> value wrapper with atomic operations
     /// </summary>
     [DebuggerDisplay("{Value}")]
+#pragma warning disable 0659, 0661
     public sealed class AtomicInteger : IAtomic<int>, IEquatable<int>
+#pragma warning restore 0659, 0661
     {
         private volatile MemoryOrder _order; // making volatile to prohibit reordering in constructors
         private int _value;
@@ -80,26 +82,54 @@ namespace System.Threading.Atomics
             }
         }
 
+        /// <summary>
+        /// Increments the <see cref="AtomicInteger"/> operand by one.
+        /// </summary>
+        /// <param name="atomicInteger">The value to increment.</param>
+        /// <returns>The value of <paramref name="atomicInteger"/> incremented by 1.</returns>
         public static AtomicInteger operator ++(AtomicInteger atomicInteger)
         {
             return Interlocked.Increment(ref atomicInteger._value);
         }
 
+        /// <summary>
+        /// Decrements the <see cref="AtomicInteger"/> operand by one.
+        /// </summary>
+        /// <param name="atomicInteger">The value to decrement.</param>
+        /// <returns>The value of <paramref name="atomicInteger"/> decremented by 1.</returns>
         public static AtomicInteger operator --(AtomicInteger atomicInteger)
         {
             return Interlocked.Decrement(ref atomicInteger._value);
         }
 
+        /// <summary>
+        /// Adds specified <paramref name="value"/> to <see cref="AtomicInteger"/> and returns the result as a <see cref="int"/>.
+        /// </summary>
+        /// <param name="atomicInteger">The <paramref name="atomicInteger"/> used for addition.</param>
+        /// <param name="value">The value to add</param>
+        /// <returns>The result of adding value to <paramref name="atomicInteger"/></returns>
         public static int operator +(AtomicInteger atomicInteger, int value)
         {
             return Interlocked.Add(ref atomicInteger._value, value);
         }
 
+        /// <summary>
+        /// Subtracts <paramref name="value"/> from <paramref name="atomicInteger"/> and returns the result as a <see cref="int"/>.
+        /// </summary>
+        /// <param name="atomicInteger">The <paramref name="atomicInteger"/> from which <paramref name="value"/> is subtracted.</param>
+        /// <param name="value">The value to subtract from <paramref name="atomicInteger"/></param>
+        /// <returns>The result of subtracting value from <see cref="AtomicInteger"/></returns>
         public static int operator -(AtomicInteger atomicInteger, int value)
         {
             return Interlocked.Add(ref atomicInteger._value, -value);
         }
 
+        /// <summary>
+        /// Multiplies <see cref="AtomicInteger"/> by specified <paramref name="value"/> and returns the result as a <see cref="int"/>.
+        /// </summary>
+        /// <param name="atomicInteger">The <see cref="AtomicInteger"/> to multiply.</param>
+        /// <param name="value">The value to multiply</param>
+        /// <returns>The result of multiplying <see cref="AtomicInteger"/> and <paramref name="value"/></returns>
         public static int operator *(AtomicInteger atomicInteger, int value)
         {
             // we do not use C# lock statement to prohibit the use of try/finally, which affects performance
@@ -123,6 +153,12 @@ namespace System.Threading.Atomics
             return result;
         }
 
+        /// <summary>
+        /// Divides the specified <see cref="AtomicInteger"/> by the specified <paramref name="value"/> and returns the resulting as <see cref="int"/>.
+        /// </summary>
+        /// <param name="atomicInteger">The <see cref="AtomicInteger"/> to divide</param>
+        /// <param name="value">The value by which <paramref name="atomicInteger"/> will be divided.</param>
+        /// <returns>The result of dividing <paramref name="atomicInteger"/> by <paramref name="value"/>.</returns>
         public static int operator /(AtomicInteger atomicInteger, int value)
         {
             if (value == 0) throw new DivideByZeroException();
@@ -148,26 +184,66 @@ namespace System.Threading.Atomics
             return result;
         }
 
+        /// <summary>
+        /// Defines an implicit conversion of a <see cref="AtomicInteger"/> to a 32-bit signed integer.
+        /// </summary>
+        /// <param name="atomicInteger">The <see cref="AtomicInteger"/> to convert.</param>
+        /// <returns>The converted <see cref="AtomicInteger"/>.</returns>
         public static implicit operator int(AtomicInteger atomicInteger)
         {
             return atomicInteger.Value;
         }
 
+        /// <summary>
+        /// Defines an implicit conversion of a 32-bit signed integer to a <see cref="AtomicInteger"/>.
+        /// </summary>
+        /// <param name="value">The 32-bit signed integer to convert.</param>
+        /// <returns>The converted 32-bit signed integer.</returns>
         public static implicit operator AtomicInteger(int value)
         {
             return new AtomicInteger(value);
         }
 
+        /// <summary>
+        /// Returns a value that indicates whether <see cref="AtomicInteger"/> and <see cref="int"/> are equal.
+        /// </summary>
+        /// <param name="x">The first value (<see cref="AtomicInteger"/>) to compare.</param>
+        /// <param name="y">The second value (<see cref="int"/>) to compare.</param>
+        /// <returns><c>true</c> if <paramref name="x"/> and <paramref name="y"/> are equal; otherwise, <c>false</c>.</returns>
         public static bool operator ==(AtomicInteger x, int y)
         {
             return (x != null && x.Value == y);
         }
 
+        /// <summary>
+        /// Returns a value that indicates whether <see cref="AtomicInteger"/> and <see cref="int"/> have different values.
+        /// </summary>
+        /// <param name="x">The first value (<see cref="AtomicInteger"/>) to compare.</param>
+        /// <param name="y">The second value (<see cref="int"/>) to compare.</param>
+        /// <returns><c>true</c> if <paramref name="x"/> and <paramref name="y"/> are not equal; otherwise, <c>false</c>.</returns>
         public static bool operator !=(AtomicInteger x, int y)
         {
             return (x != null && x.Value != y);
         }
 
+        /// <summary>
+        /// Returns a value indicating whether this instance and a specified Object represent the same type and value.
+        /// </summary>
+        /// <param name="obj">The object to compare with this instance.</param>
+        /// <returns><c>true</c> if <paramref name="obj"/> is a <see cref="AtomicInteger"/> and equal to this instance; otherwise, <c>false</c>.</returns>
+        public override bool Equals(object obj)
+        {
+            AtomicInteger other = obj as AtomicInteger;
+            if (other == null) return false;
+
+            return object.ReferenceEquals(this, other) || this.Value == other.Value;
+        }
+
+        /// <summary>
+        /// Returns a value indicating whether this instance and a specified <see cref="AtomicInteger"/> object represent the same value.
+        /// </summary>
+        /// <param name="other">An object to compare to this instance.</param>
+        /// <returns><c>true</c> if <paramref name="other"/> is equal to this instance; otherwise, <c>false</c>.</returns>
         bool IEquatable<int>.Equals(int other)
         {
             return this.Value == other;

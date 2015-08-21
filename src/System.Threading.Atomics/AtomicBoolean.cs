@@ -6,7 +6,9 @@ namespace System.Threading.Atomics
     /// An <see cref="bool"/> value wrapper with atomic access
     /// </summary>
     [DebuggerDisplay("{Value}")]
+#pragma warning disable 0659, 0661
     public sealed class AtomicBoolean : IAtomic<bool>, IEquatable<bool>
+#pragma warning restore 0659, 0661
     {
         private volatile AtomicInteger _storageInteger;
 
@@ -38,6 +40,10 @@ namespace System.Threading.Atomics
             set { _storageInteger.Value = value ? 1 : 0; }
         }
 
+        /// <summary>
+        /// Converts the of this instance to its equivalent string representation (either "True" or "False").
+        /// </summary>
+        /// <returns><see cref="bool.TrueString"/> if the value of this instance is true, or <see cref="bool.FalseString"/> if the value of this instance is false.</returns>
         public override string ToString()
         {
             return this.Value ? bool.TrueString : bool.FalseString;
@@ -57,16 +63,66 @@ namespace System.Threading.Atomics
             return Volatile.Read(ref location1);
         }
 
-        public static implicit operator bool(AtomicBoolean atomicInteger)
+        /// <summary>
+        /// Defines an implicit conversion of a <see cref="AtomicBoolean"/> to a boolean.
+        /// </summary>
+        /// <param name="atomicBoolean">The <see cref="AtomicBoolean"/> to convert.</param>
+        /// <returns>The converted <see cref="AtomicBoolean"/>.</returns>
+        public static implicit operator bool(AtomicBoolean atomicBoolean)
         {
-            return atomicInteger.Value;
+            return atomicBoolean.Value;
         }
 
+        /// <summary>
+        /// Defines an implicit conversion of a boolean to a <see cref="AtomicBoolean"/>.
+        /// </summary>
+        /// <param name="value">The boolean to convert.</param>
+        /// <returns>The converted boolean.</returns>
         public static implicit operator AtomicBoolean(bool value)
         {
             return new AtomicBoolean(value);
         }
 
+        /// <summary>
+        /// Returns a value that indicates whether <see cref="AtomicBoolean"/> and <see cref="int"/> are equal.
+        /// </summary>
+        /// <param name="x">The first value (<see cref="AtomicBoolean"/>) to compare.</param>
+        /// <param name="y">The second value (<see cref="int"/>) to compare.</param>
+        /// <returns><c>true</c> if <paramref name="x"/> and <paramref name="y"/> are equal; otherwise, <c>false</c>.</returns>
+        public static bool operator ==(AtomicBoolean x, bool y)
+        {
+            return (x != null && x.Value == y);
+        }
+
+        /// <summary>
+        /// Returns a value that indicates whether <see cref="AtomicBoolean"/> and <see cref="int"/> have different values.
+        /// </summary>
+        /// <param name="x">The first value (<see cref="AtomicBoolean"/>) to compare.</param>
+        /// <param name="y">The second value (<see cref="int"/>) to compare.</param>
+        /// <returns><c>true</c> if <paramref name="x"/> and <paramref name="y"/> are not equal; otherwise, <c>false</c>.</returns>
+        public static bool operator !=(AtomicBoolean x, bool y)
+        {
+            return (x != null && x.Value != y);
+        }
+
+        /// <summary>
+        /// Returns a value indicating whether this instance and a specified Object represent the same type and value.
+        /// </summary>
+        /// <param name="obj">The object to compare with this instance.</param>
+        /// <returns><c>true</c> if <paramref name="obj"/> is a <see cref="AtomicBoolean"/> and equal to this instance; otherwise, <c>false</c>.</returns>
+        public override bool Equals(object obj)
+        {
+            AtomicBoolean other = obj as AtomicBoolean;
+            if (other == null) return false;
+
+            return object.ReferenceEquals(this, other) || this.Value == other.Value;
+        }
+
+        /// <summary>
+        /// Returns a value indicating whether this instance and a specified <see cref="AtomicBoolean"/> object represent the same value.
+        /// </summary>
+        /// <param name="other">An object to compare to this instance.</param>
+        /// <returns><c>true</c> if <paramref name="other"/> is equal to this instance; otherwise, <c>false</c>.</returns>
         bool IEquatable<bool>.Equals(bool other)
         {
             return this.Value == other;

@@ -8,7 +8,9 @@ namespace System.Threading.Atomics
     /// </summary>
     /// <typeparam name="T">The underlying struct's type</typeparam>
     [DebuggerDisplay("{Value}")]
+#pragma warning disable 0659, 0661
     public sealed class Atomic<T> : IAtomic<T>, IEquatable<T> where T : struct, IEquatable<T>
+#pragma warning restore 0659, 0661
     {
         private T _value;
         private static readonly PrimitiveAtomics PrimitiveIntrinsics = new PrimitiveAtomics();
@@ -70,6 +72,9 @@ namespace System.Threading.Atomics
             return this;
         }
 
+        /// <summary>
+        /// Gets or sets atomically the underlying value
+        /// </summary>
         public T Value
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -137,28 +142,68 @@ namespace System.Threading.Atomics
             return result;
         }
 
+        /// <summary>
+        /// Defines an implicit conversion of a <see cref="AtomicInteger"/> to a <typeparamref name="T"/>.
+        /// </summary>
+        /// <param name="atomic">The <see cref="Atomic{T}"/> to convert.</param>
+        /// <returns>The converted <see cref="Atomic{T}"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator T(Atomic<T> atomic)
         {
             return atomic.Value;
         }
 
+        /// <summary>
+        /// Defines an implicit conversion of a <typeparamref name="T"/> to a <see cref="AtomicInteger"/>.
+        /// </summary>
+        /// <param name="value">The <typeparamref name="T"/> to convert.</param>
+        /// <returns>The converted <typeparamref name="T"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator Atomic<T>(T value)
         {
             return new Atomic<T>(value);
         }
 
+        /// <summary>
+        /// Returns a value indicating whether this instance and a specified Object represent the same type and value.
+        /// </summary>
+        /// <param name="obj">The object to compare with this instance.</param>
+        /// <returns><c>true</c> if <paramref name="obj"/> is a <see cref="Atomic{T}"/> and equal to this instance; otherwise, <c>false</c>.</returns>
+        public override bool Equals(object obj)
+        {
+            Atomic<T> other = obj as Atomic<T>;
+            if (other == null) return false;
+
+            return object.ReferenceEquals(this, other) || this.Value.Equals(other.Value);
+        }
+
+        /// <summary>
+        /// Returns a value indicating whether this instance and a specified <see cref="Atomic{T}"/> object represent the same value.
+        /// </summary>
+        /// <param name="other">An object to compare to this instance.</param>
+        /// <returns><c>true</c> if <paramref name="other"/> is equal to this instance; otherwise, <c>false</c>.</returns>
         bool IEquatable<T>.Equals(T other)
         {
             return this.Value.Equals(other);
         }
 
+        /// <summary>
+        /// Returns a value that indicates whether <see cref="Atomic{T}"/> and <typeparamref name="T"/> are equal.
+        /// </summary>
+        /// <param name="x">The first value (<see cref="Atomic{T}"/>) to compare.</param>
+        /// <param name="y">The second value (<typeparamref name="T"/>) to compare.</param>
+        /// <returns><c>true</c> if <paramref name="x"/> and <paramref name="y"/> are equal; otherwise, <c>false</c>.</returns>
         public static bool operator ==(Atomic<T> x, T y)
         {
             return (!object.ReferenceEquals(x, null) && x.Value.Equals(y));
         }
 
+        /// <summary>
+        /// Returns a value that indicates whether <see cref="Atomic{T}"/> and <typeparamref name="T"/> have different values.
+        /// </summary>
+        /// <param name="x">The first value (<see cref="Atomic{T}"/>) to compare.</param>
+        /// <param name="y">The second value (<typeparamref name="T"/>) to compare.</param>
+        /// <returns><c>true</c> if <paramref name="x"/> and <paramref name="y"/> are not equal; otherwise, <c>false</c>.</returns>
         public static bool operator !=(Atomic<T> x, T y)
         {
             if (object.ReferenceEquals(x, null))

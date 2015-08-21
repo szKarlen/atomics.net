@@ -8,7 +8,9 @@ namespace System.Threading.Atomics
     /// </summary>
     /// <typeparam name="T">The underlying reference's type</typeparam>
     [DebuggerDisplay("{Value}")]
+#pragma warning disable 0659, 0661
     public sealed class AtomicReference<T> : IEquatable<T> where T : class
+#pragma warning restore 0659, 0661
     {
         private volatile MemoryOrder _order;
         private T _value;
@@ -114,11 +116,23 @@ namespace System.Threading.Atomics
             return currentValue;
         }
 
+        /// <summary>
+        /// Returns a value that indicates whether <see cref="AtomicReference{T}"/> and <typeparamref name="T"/> are equal.
+        /// </summary>
+        /// <param name="x">The first value (<see cref="AtomicReference{T}"/>) to compare.</param>
+        /// <param name="y">The second value (<typeparamref name="T"/>) to compare.</param>
+        /// <returns><c>true</c> if <paramref name="x"/> and <paramref name="y"/> are equal; otherwise, <c>false</c>.</returns>
         public static bool operator ==(AtomicReference<T> x, T y)
         {
             return (!object.ReferenceEquals(x, null) && x.Value == y);
         }
 
+        /// <summary>
+        /// Returns a value that indicates whether <see cref="AtomicReference{T}"/> and <typeparamref name="T"/> have different values.
+        /// </summary>
+        /// <param name="x">The first value (<see cref="AtomicReference{T}"/>) to compare.</param>
+        /// <param name="y">The second value (<typeparamref name="T"/>) to compare.</param>
+        /// <returns><c>true</c> if <paramref name="x"/> and <paramref name="y"/> are not equal; otherwise, <c>false</c>.</returns>
         public static bool operator !=(AtomicReference<T> x, T y)
         {
             if (object.ReferenceEquals(x, null))
@@ -128,18 +142,46 @@ namespace System.Threading.Atomics
             return value != y;
         }
 
+        /// <summary>
+        /// Returns a value indicating whether this instance and a specified Object represent the same type and value.
+        /// </summary>
+        /// <param name="obj">The object to compare with this instance.</param>
+        /// <returns><c>true</c> if <paramref name="obj"/> is a <see cref="AtomicReference{T}"/> and equal to this instance; otherwise, <c>false</c>.</returns>
+        public override bool Equals(object obj)
+        {
+            AtomicReference<T> other = obj as AtomicReference<T>;
+            if (object.ReferenceEquals(other, null)) return false;
+
+            return object.ReferenceEquals(this, other) || this.Value == other.Value;
+        }
+
+        /// <summary>
+        /// Returns a value indicating whether this instance and a specified <see cref="AtomicReference{T}"/> object represent the same value.
+        /// </summary>
+        /// <param name="other">An object to compare to this instance.</param>
+        /// <returns><c>true</c> if <paramref name="other"/> is equal to this instance; otherwise, <c>false</c>.</returns>
         bool IEquatable<T>.Equals(T other)
         {
             T value = this.Value;
             return value == other || (other != null && value != null && other.Equals(value));
         }
 
+        /// <summary>
+        /// Defines an implicit conversion of a <see cref="AtomicReference{T}"/> to a <typeparamref name="T"/>.
+        /// </summary>
+        /// <param name="atomic">The <see cref="Atomic{T}"/> to convert.</param>
+        /// <returns>The converted <see cref="Atomic{T}"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator T(AtomicReference<T> atomic)
         {
             return atomic.Value;
         }
 
+        /// <summary>
+        /// Defines an implicit conversion of a <typeparamref name="T"/> to a <see cref="AtomicReference{T}"/>.
+        /// </summary>
+        /// <param name="value">The <typeparamref name="T"/> to convert.</param>
+        /// <returns>The converted <typeparamref name="T"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator AtomicReference<T>(T value)
         {
