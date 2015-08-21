@@ -30,7 +30,7 @@ namespace System.Threading.Atomics
 
             _storage = GetStorage(order);
 
-            if (order == MemoryOrder.SeqCst && _storage == this)
+            if (order == MemoryOrder.SeqCst && object.ReferenceEquals(_storage, this))
                 _instanceLock = new object();
 
             _order = order;
@@ -47,7 +47,7 @@ namespace System.Threading.Atomics
 
             _storage = GetStorage(order);
 
-            if (order == MemoryOrder.SeqCst && _storage == this)
+            if (order == MemoryOrder.SeqCst && object.ReferenceEquals(_storage, this))
                 _instanceLock = new object();
 
             _order = order;
