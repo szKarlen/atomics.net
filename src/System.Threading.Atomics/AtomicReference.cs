@@ -107,12 +107,12 @@ namespace System.Threading.Atomics
         {
             T currentValue = _value;
             T tempValue = null;
-            while (tempValue != currentValue)
+            do
             {
                 tempValue = Interlocked.CompareExchange(ref _value, setter(currentValue), currentValue);
 
                 currentValue = tempValue;
-            } 
+            } while (tempValue != currentValue);
             return currentValue;
         }
 
