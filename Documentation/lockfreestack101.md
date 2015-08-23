@@ -195,7 +195,7 @@ Run stress-test and get equal output.
 Final notes
 -------
 
-In last example (i.e. `AtomicStack<T>`) the method Peek() may look a little bit confusing
+In last example (i.e. `AtomicStack<T>`) the method Push() may look a little bit confusing
 ``` csharp
 public void Push(T item)
 {
