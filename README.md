@@ -173,7 +173,9 @@ Feel free to fork and create pull-requests if you have any kind of enhancements 
 NuGet
 -------
 
-Coming soon
+[Package's page](https://www.nuget.org/packages/System.Threading.Atomics)
+
+Command: `PM> Install-Package System.Threading.Atomics -Pre`
 
 License
 -------
