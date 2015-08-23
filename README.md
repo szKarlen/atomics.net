@@ -119,16 +119,12 @@ public class AtomicStack<T>
     {
         if (IsEmpty)
             throw new InvalidOperationException();
-
-        StackNode<T> head = m_head.Set(stackNode =>
+            
+        return m_head.Set(stackNode =>
         {
-            head = m_head;
-            return head.m_next;
-        });
-
-        IsEmpty = head.m_next == null;
-
-        return head.m_value;
+            IsEmpty = stackNode.m_next == null;
+            return stackNode.m_next;
+        }).m_value;
     }
 
     public bool IsEmpty
