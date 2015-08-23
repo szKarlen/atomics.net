@@ -31,7 +31,7 @@ Supported types and operations
 Read/writes operations on references are provided by `AtomicReference<T>`.
 The `Atomic<T>` class should be used for structs (i.e. value types), including (`char`, `byte`, etc.).
 
-`AtomicInteger` and `AtomicLong` classes has support for `+, -, *, /, ++, --, +=, -=, *=, *=` operators with atomicity guarantees.
+`AtomicInteger` and `AtomicLong` classes has support for `+, -, *, /, ++, --, +=, -=, *=, /=` operators with atomicity guarantees.
 
 All primitives implement the implicit conversion operator overloads with atomic access.
 
