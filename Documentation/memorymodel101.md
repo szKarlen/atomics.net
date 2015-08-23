@@ -64,3 +64,5 @@ Starting from .NET 4.5 support for Itanium was [droppped](https://msdn.microsoft
 This means that there is no need for additional explicit barrier/fences to be used for processor cache coherence support. X86-64 do this by design.
 
 The only situation about acquire/release semantics for .NET was the following [behaviour](#itanium): **_CLR JIT on Itanium does emit ST.REL for non-volatile writes_**, because Itanium distinguishes between an ordinary load (LD) and load-acquire (LD.ACQ), and an ordinary store (ST) and store-release (ST.REL) ([source](https://msdn.microsoft.com/en-us/magazine/jj883956.aspx)).
+
+This means, that all writes are volatile, while reads - not and requires to use memeory barrier for acquire.

@@ -9,7 +9,7 @@ Design and implementation
 
 Project aims to be very close to C++ 11 standard atomics by design and usage. For example, The [memory order](http://en.cppreference.com/w/cpp/atomic/memory_order) flag could be provided to primitives.
 
-Although the library is a PCL itself, the minimum required version of .NET - 4.5. But you can compile for .NET 4.0 and earlier. The Itanium-related stuff (reorderings, fences and barrier usages, etc.) will be present (see [docs](Documentation/memorymodel101.md)).
+Although the library is a PCL itself, the minimum required version of .NET - 4.5. But you can compile for .NET 4.0 and earlier. The Itanium-related stuff (volatile reads with proper memeory barriers usages, etc.) will be present (see [docs](Documentation/memorymodel101.md)).
 
 The default memory semantics for library's primitives is Acquire/Release, which fits very well with .NET Framework and CLR 2.0 memory model.
 
@@ -44,7 +44,6 @@ Here is the basic setup and usage of atomic primitives.
 
 ``` csharp
 using System;
-using System.IO;
 
 class Counter
 {
@@ -63,7 +62,7 @@ class Counter
             _value++;
     }
     
-    public void Show()
+    public void PrintCounter()
     {
         Console.WriteLine(_value); // Console.WriteLine(int) overload will be used
     }
