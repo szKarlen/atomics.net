@@ -1,6 +1,6 @@
 # Lock-free stack 101
 
-This doc aims to provide some examples or ideas of how to implement LIFO, FIFO lock-free stack using atomics.net.
+This doc aims to provide some examples and ideas of how to implement LIFO, FIFO lock-free stack using atomics.net.
 For more detailed description of terms, please refer to [glossary](glossary.md).
 
 Acquire/Release through CAS approach
@@ -13,7 +13,7 @@ Current implementation of atomics.net uses CAS approach for lock-free atomic ope
 
 So any atomic primitive does use for get/set operations CAS in Acquire/Release mode.
 
-LIFO container aka
+LIFO container aka Stack
 -------
 
 As an initial example of a lock-free stack implementation lets look at the followig example (borrowed from [Joe Duffy
