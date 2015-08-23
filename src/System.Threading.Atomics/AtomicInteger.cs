@@ -132,7 +132,6 @@ namespace System.Threading.Atomics
         /// <returns>The result of multiplying <see cref="AtomicInteger"/> and <paramref name="value"/></returns>
         public static int operator *(AtomicInteger atomicInteger, int value)
         {
-            // we do not use C# lock statement to prohibit the use of try/finally, which affects performance
             bool entered = false;
             int currentValue = atomicInteger.Value;
 
@@ -140,16 +139,23 @@ namespace System.Threading.Atomics
             {
                 Monitor.Enter(atomicInteger._instanceLock, ref entered);
             }
+
             int result = currentValue * value;
-            int tempValue;
-            do
+            try
             {
-                tempValue = Interlocked.CompareExchange(ref atomicInteger._value, result, currentValue);
-            } while (tempValue != currentValue);
+                int tempValue;
+                do
+                {
+                    tempValue = Interlocked.CompareExchange(ref atomicInteger._value, result, currentValue);
+                } while (tempValue != currentValue);
 
-            if (entered)
-                Monitor.Exit(atomicInteger._instanceLock);
-
+            }
+            finally
+            {
+                if (entered)
+                    Monitor.Exit(atomicInteger._instanceLock);
+            }
+            
             return result;
         }
 
@@ -163,7 +169,6 @@ namespace System.Threading.Atomics
         {
             if (value == 0) throw new DivideByZeroException();
 
-            // we do not use C# lock statement to prohibit the use of try/finally, which affects performance
             bool entered = false;
             int currentValue = atomicInteger.Value;
 
@@ -171,16 +176,22 @@ namespace System.Threading.Atomics
             {
                 Monitor.Enter(atomicInteger._instanceLock, ref entered);
             }
+
             int result = currentValue / value;
-            int tempValue;
-            do
+            try
             {
-                tempValue = Interlocked.CompareExchange(ref atomicInteger._value, result, currentValue);
-            } while (tempValue != currentValue);
-
-            if (entered)
-                Monitor.Exit(atomicInteger._instanceLock);
-
+                int tempValue;
+                do
+                {
+                    tempValue = Interlocked.CompareExchange(ref atomicInteger._value, result, currentValue);
+                } while (tempValue != currentValue);
+            }
+            finally
+            {
+                if (entered)
+                    Monitor.Exit(atomicInteger._instanceLock);
+            }
+            
             return result;
         }
 

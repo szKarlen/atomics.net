@@ -132,7 +132,6 @@ namespace System.Threading.Atomics
         /// <returns>The result of multiplying <see cref="AtomicLong"/> and <paramref name="value"/></returns>
         public static long operator *(AtomicLong atomicLong, long value)
         {
-            // we do not use C# lock statement to prohibit the use of try/finally, which affects performance
             bool entered = false;
             long currentValue = atomicLong.Value;
 
@@ -140,16 +139,22 @@ namespace System.Threading.Atomics
             {
                 Monitor.Enter(atomicLong._instanceLock, ref entered);
             }
+
             long result = currentValue * value;
-            long tempValue;
-            do
+            try
             {
-                tempValue = Interlocked.CompareExchange(ref atomicLong._value, result, currentValue);
-            } while (tempValue != currentValue);
-
-            if (entered)
-                Monitor.Exit(atomicLong._instanceLock);
-
+                long tempValue;
+                do
+                {
+                    tempValue = Interlocked.CompareExchange(ref atomicLong._value, result, currentValue);
+                } while (tempValue != currentValue);
+            }
+            finally
+            {
+                if (entered)
+                    Monitor.Exit(atomicLong._instanceLock);
+            }
+            
             return result;
         }
 
@@ -163,7 +168,6 @@ namespace System.Threading.Atomics
         {
             if (value == 0) throw new DivideByZeroException();
 
-            // we do not use C# lock statement to prohibit the use of try/finally, which affects performance
             bool entered = false;
             long currentValue = atomicLong.Value;
 
@@ -171,15 +175,21 @@ namespace System.Threading.Atomics
             {
                 Monitor.Enter(atomicLong._instanceLock, ref entered);
             }
-            long result = currentValue / value;
-            long tempValue;
-            do
-            {
-                tempValue = Interlocked.CompareExchange(ref atomicLong._value, result, currentValue);
-            } while (tempValue != currentValue);
 
-            if (entered)
-                Monitor.Exit(atomicLong._instanceLock);
+            long result = currentValue / value;
+            try
+            {
+                long tempValue;
+                do
+                {
+                    tempValue = Interlocked.CompareExchange(ref atomicLong._value, result, currentValue);
+                } while (tempValue != currentValue);
+            }
+            finally
+            {
+                if (entered)
+                    Monitor.Exit(atomicLong._instanceLock);
+            }
 
             return result;
         }
