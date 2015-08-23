@@ -208,4 +208,4 @@ public void Push(T item)
     }) != null;
 }
 ```
-At line 8 (`return node;`) get return the setter value, while at line 3 (`IsEmpty = m_head.Set(stackNode =>`) the return value is the previous value of AtomicReference<StackNode<T>>.Value;
+At line 8 (`return node;`) we return the setter value, while at line 3 (`IsEmpty = m_head.Set(stackNode =>`) the return value is the previous value of `AtomicReference<StackNode<T>>.Value`;
