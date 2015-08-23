@@ -28,14 +28,14 @@ Atomic primitives
 
 Supported types and operations
 -------
-The reference types pointers read/writes are provided by `AtomicReference<T>`.
-The `Atomic<T>` class should be used for structs (i.e. value types).
+Read/writes operations on references are provided by `AtomicReference<T>`.
+The `Atomic<T>` class should be used for structs (i.e. value types), including (`char`, `byte`, etc.).
 
-`AtomicInteger` and `AtomicLong` classes has support for `+, -, *, /, ++, --, +=, -=, *=, *=` operators support with atomicity guarantees.
+`AtomicInteger` and `AtomicLong` classes has support for `+, -, *, /, ++, --, +=, -=, *=, *=` operators with atomicity guarantees.
 
-All primitives implement the implicit conversion operator overloads with atomic accesses.
+All primitives implement the implicit conversion operator overloads with atomic access.
 
-Integers support is ranging from 8 to 64 bit with unsigned ones as well.
+Integers ranging from 8 to 64 bit are supported as well as unsigned ones.
 
 Sample usage
 -------
@@ -91,6 +91,74 @@ var atomicBool = new AtomicBoolean(false);
 ```
 
 The above example applies to `Atomic<int>` with `AtomicInteger`, and `Atomic<long>` with `AtomicLong`.
+
+Lock-free stack 101
+-------
+
+It is very straightforward to implement lock-free stack:
+``` csharp
+public class AtomicStack<T>
+{
+    private AtomicReference<StackNode<T>> m_head = new AtomicReference<StackNode<T>>();
+    private readonly AtomicBoolean _isEmpty = new AtomicBoolean(true);
+
+    public void Push(T item)
+    {
+        IsEmpty = m_head.Set(stackNode =>
+        {
+            StackNode<T> node = new StackNode<T>(item);
+            node.m_next = m_head;
+
+            return node;
+        }) != null;
+    }
+
+    public T Pop()
+    {
+        if (IsEmpty)
+            throw new InvalidOperationException();
+
+        StackNode<T> head = m_head.Set(stackNode =>
+        {
+            head = m_head;
+            return head.m_next;
+        });
+
+        IsEmpty = head.m_next == null;
+
+        return head.m_value;
+    }
+
+    public bool IsEmpty
+    {
+        get { return _isEmpty; }
+        private set { _isEmpty.Value = value; }
+    }
+
+    class StackNode<T>
+    {
+        internal T m_value;
+        internal StackNode<T> m_next;
+        internal StackNode(T val) { m_value = val; }
+    }
+}
+```
+
+and usage:
+``` csharp
+AtomicStack<int> stack = new AtomicStack<int>();
+
+Parallel.For(0, 2000, stack.Push);
+
+while (!stack.IsEmpty)
+{
+    Console.WriteLine(stack.Pop());
+}
+```
+
+Console should output numbers ranging from 1999 to 0.
+
+For more details about `AtomicStack<T>` example above, please refer [docs](Documentation/lockfreestack101.md).
 
 CAS notes
 -------
