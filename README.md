@@ -104,13 +104,15 @@ public class AtomicStack<T>
 
     public void Push(T item)
     {
-        IsEmpty = m_head.Set(stackNode =>
+        m_head.Set(stackNode =>
         {
             StackNode<T> node = new StackNode<T>(item);
             node.m_next = m_head;
 
+            IsEmpty = false;
+            
             return node;
-        }) != null;
+        });
     }
 
     public T Pop()

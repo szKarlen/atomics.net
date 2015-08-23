@@ -150,13 +150,15 @@ public class AtomicStack<T>
 
     public void Push(T item)
     {
-        IsEmpty = m_head.Set(stackNode =>
+        m_head.Set(stackNode =>
         {
             StackNode<T> node = new StackNode<T>(item);
             node.m_next = m_head;
 
+            IsEmpty = false;
+            
             return node;
-        }) != null;
+        });
     }
 
     public T Pop()
@@ -199,13 +201,15 @@ In last example (i.e. `AtomicStack<T>`) the method Push() may look a little bit 
 ``` csharp
 public void Push(T item)
 {
-    IsEmpty = m_head.Set(stackNode =>
+    m_head.Set(stackNode =>
     {
         StackNode<T> node = new StackNode<T>(item);
         node.m_next = m_head;
 
+        IsEmpty = false;
+
         return node;
-    }) != null;
+    });
 }
 ```
-At line 8 (`return node;`) we return the setter value, while at line 3 (`IsEmpty = m_head.Set(stackNode =>`) the return value is the previous value of `AtomicReference<StackNode<T>>.Value`;
+At line 8 (`return node;`) we return the setter value, while at line 3 (`IsEmpty = m_head.Set(stackNode =>`) the return value is the previous value of `AtomicReference<StackNode<T>>.Value`.
