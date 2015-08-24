@@ -105,14 +105,13 @@ namespace System.Threading.Atomics
 
         private T WriteAcqRel(Func<T, T> setter)
         {
-            T currentValue = _value;
-            T tempValue = null;
+            T currentValue;
+            T tempValue;
             do
             {
-                tempValue = Interlocked.CompareExchange(ref _value, setter(currentValue), currentValue);
-
-                currentValue = tempValue;
-            } while (tempValue != currentValue);
+                currentValue = _value;
+                tempValue = setter(currentValue);
+            } while (_value != currentValue || Interlocked.CompareExchange(ref _value, tempValue, currentValue) != currentValue);
             return currentValue;
         }
 
