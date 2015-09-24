@@ -7,7 +7,7 @@ namespace System.Threading.Atomics
     /// </summary>
     [DebuggerDisplay("{Value}")]
 #pragma warning disable 0659, 0661
-    public sealed class AtomicInteger : IAtomic<int>, IEquatable<int>
+    public sealed class AtomicInteger : IAtomic<int>, IEquatable<int>, IEquatable<AtomicInteger>
 #pragma warning restore 0659, 0661
     {
         private volatile MemoryOrder _order; // making volatile to prohibit reordering in constructors
@@ -251,13 +251,23 @@ namespace System.Threading.Atomics
         }
 
         /// <summary>
+        /// Returns a value indicating whether this instance and a specified <paramref name="other"/> represent the same value.
+        /// </summary>
+        /// <param name="other">An object to compare to this instance.</param>
+        /// <returns><c>true</c> if <paramref name="other"/> is equal to this instance; otherwise, <c>false</c>.</returns>
+        public bool Equals(int other)
+        {
+            return this.Value == other;
+        }
+
+        /// <summary>
         /// Returns a value indicating whether this instance and a specified <see cref="AtomicInteger"/> object represent the same value.
         /// </summary>
         /// <param name="other">An object to compare to this instance.</param>
         /// <returns><c>true</c> if <paramref name="other"/> is equal to this instance; otherwise, <c>false</c>.</returns>
-        bool IEquatable<int>.Equals(int other)
+        public bool Equals(AtomicInteger other)
         {
-            return this.Value == other;
+            return other.Value == this.Value;
         }
 
         int IAtomic<int>.Value

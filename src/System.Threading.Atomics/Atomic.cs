@@ -9,7 +9,7 @@ namespace System.Threading.Atomics
     /// <typeparam name="T">The underlying struct's type</typeparam>
     [DebuggerDisplay("{Value}")]
 #pragma warning disable 0659, 0661
-    public sealed class Atomic<T> : IAtomic<T>, IEquatable<T> where T : struct, IEquatable<T>
+    public sealed class Atomic<T> : IAtomic<T>, IEquatable<T>, IEquatable<Atomic<T>> where T : struct, IEquatable<T>
 #pragma warning restore 0659, 0661
     {
         private T _value;
@@ -178,13 +178,23 @@ namespace System.Threading.Atomics
         }
 
         /// <summary>
+        /// Returns a value indicating whether this instance and a specified <paramref name="other"/> represent the same value.
+        /// </summary>
+        /// <param name="other">An object to compare to this instance.</param>
+        /// <returns><c>true</c> if <paramref name="other"/> is equal to this instance; otherwise, <c>false</c>.</returns>
+        public bool Equals(T other)
+        {
+            return this.Value.Equals(other);
+        }
+
+        /// <summary>
         /// Returns a value indicating whether this instance and a specified <see cref="Atomic{T}"/> object represent the same value.
         /// </summary>
         /// <param name="other">An object to compare to this instance.</param>
         /// <returns><c>true</c> if <paramref name="other"/> is equal to this instance; otherwise, <c>false</c>.</returns>
-        bool IEquatable<T>.Equals(T other)
+        public bool Equals(Atomic<T> other)
         {
-            return this.Value.Equals(other);
+            return this.Value.Equals(other.Value);
         }
 
         /// <summary>

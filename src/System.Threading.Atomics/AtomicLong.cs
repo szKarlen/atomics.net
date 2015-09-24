@@ -7,7 +7,7 @@ namespace System.Threading.Atomics
     /// </summary>
     [DebuggerDisplay("{Value}")]
 #pragma warning disable 0659, 0661
-    public sealed class AtomicLong : IAtomic<long>, IEquatable<long>
+    public sealed class AtomicLong : IAtomic<long>, IEquatable<long>, IEquatable<AtomicLong>
 #pragma warning restore 0659, 0661
     {
         private volatile MemoryOrder _order; // making volatile to prohibit reordering in constructors
@@ -250,13 +250,23 @@ namespace System.Threading.Atomics
         }
 
         /// <summary>
+        /// Returns a value indicating whether this instance and a specified <paramref name="other"/> represent the same value.
+        /// </summary>
+        /// <param name="other">An object to compare to this instance.</param>
+        /// <returns><c>true</c> if <paramref name="other"/> is equal to this instance; otherwise, <c>false</c>.</returns>
+        public bool Equals(long other)
+        {
+            return this.Value == other;
+        }
+
+        /// <summary>
         /// Returns a value indicating whether this instance and a specified <see cref="AtomicLong"/> object represent the same value.
         /// </summary>
         /// <param name="other">An object to compare to this instance.</param>
         /// <returns><c>true</c> if <paramref name="other"/> is equal to this instance; otherwise, <c>false</c>.</returns>
-        bool IEquatable<long>.Equals(long other)
+        public bool Equals(AtomicLong other)
         {
-            return this.Value == other;
+            return this.Value == other.Value;
         }
 
         long IAtomic<long>.Value

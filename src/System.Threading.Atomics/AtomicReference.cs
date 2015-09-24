@@ -9,7 +9,7 @@ namespace System.Threading.Atomics
     /// <typeparam name="T">The underlying reference's type</typeparam>
     [DebuggerDisplay("{Value}")]
 #pragma warning disable 0659, 0661
-    public sealed class AtomicReference<T> : IEquatable<T> where T : class
+    public sealed class AtomicReference<T> : IEquatable<T>, IEquatable<AtomicReference<T>> where T : class
 #pragma warning restore 0659, 0661
     {
         private volatile MemoryOrder _order;
@@ -155,14 +155,26 @@ namespace System.Threading.Atomics
         }
 
         /// <summary>
+        /// Returns a value indicating whether this instance and a specified <paramref name="other"/> object represent the same value.
+        /// </summary>
+        /// <param name="other">An object to compare to this instance.</param>
+        /// <returns><c>true</c> if <paramref name="other"/> is equal to this instance; otherwise, <c>false</c>.</returns>
+        public bool Equals(T other)
+        {
+            T value = this.Value;
+            return value == other || (other != null && value != null && other.Equals(value));
+        }
+
+        /// <summary>
         /// Returns a value indicating whether this instance and a specified <see cref="AtomicReference{T}"/> object represent the same value.
         /// </summary>
         /// <param name="other">An object to compare to this instance.</param>
         /// <returns><c>true</c> if <paramref name="other"/> is equal to this instance; otherwise, <c>false</c>.</returns>
-        bool IEquatable<T>.Equals(T other)
+        public bool Equals(AtomicReference<T> other)
         {
             T value = this.Value;
-            return value == other || (other != null && value != null && other.Equals(value));
+            T otherValue = other.Value;
+            return value == otherValue || (otherValue != null && value != null && otherValue.Equals(value));
         }
 
         /// <summary>
