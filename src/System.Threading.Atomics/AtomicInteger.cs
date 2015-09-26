@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Threading.Atomics.Operations;
 
 namespace System.Threading.Atomics
 {
