@@ -7,7 +7,7 @@ namespace System.Threading.Atomics
     /// </summary>
     [DebuggerDisplay("{Value}")]
 #pragma warning disable 0659, 0661
-    public sealed class AtomicBoolean : IAtomic<bool>, IEquatable<bool>
+    public sealed class AtomicBoolean : IAtomic<bool>, IEquatable<bool>, IEquatable<AtomicBoolean>
 #pragma warning restore 0659, 0661
     {
         private volatile AtomicInteger _storageInteger;
@@ -38,6 +38,21 @@ namespace System.Threading.Atomics
         {
             get { return _storageInteger.Value != 0; }
             set { _storageInteger.Value = value ? 1 : 0; }
+        }
+
+        public void Set(bool value, MemoryOrder order)
+        {
+            _storageInteger.Set(value ? 1 : 0, order);
+        }
+
+        public bool Load(MemoryOrder order)
+        {
+            return _storageInteger.Load(order) != 0;
+        }
+
+        public bool IsLockFree
+        {
+            get { return _storageInteger.IsLockFree; }
         }
 
         /// <summary>
@@ -119,13 +134,28 @@ namespace System.Threading.Atomics
         }
 
         /// <summary>
+        /// Returns a value indicating whether this instance and a specified value represent the same value.
+        /// </summary>
+        /// <param name="other">An object to compare to this instance.</param>
+        /// <returns><c>true</c> if <paramref name="other"/> is equal to this instance; otherwise, <c>false</c>.</returns>
+        public bool Equals(bool other)
+        {
+            return this.Value == other;
+        }
+
+        /// <summary>
         /// Returns a value indicating whether this instance and a specified <see cref="AtomicBoolean"/> object represent the same value.
         /// </summary>
         /// <param name="other">An object to compare to this instance.</param>
         /// <returns><c>true</c> if <paramref name="other"/> is equal to this instance; otherwise, <c>false</c>.</returns>
-        bool IEquatable<bool>.Equals(bool other)
+        public bool Equals(AtomicBoolean other)
         {
-            return this.Value == other;
+            return (!ReferenceEquals(other, null) && (ReferenceEquals(this, other) || this.Value == other.Value));
+        }
+
+        bool IAtomicsOperator<bool>.Supports<TType>()
+        {
+            return typeof (TType) == typeof (bool);
         }
     }
 }

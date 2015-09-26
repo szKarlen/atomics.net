@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace System.Threading.Atomics
 {
@@ -13,13 +14,15 @@ namespace System.Threading.Atomics
 #pragma warning restore 0659, 0661
     {
         private T _value;
+        private static readonly int PodSize = Marshal.SizeOf(typeof (T));
         private static readonly PrimitiveAtomics PrimitiveIntrinsics = new PrimitiveAtomics();
 
-        private volatile IAtomic<T> _storage;
-        private volatile object _instanceLock;
+        private readonly IAtomic<T> _storage;
+        private readonly object _instanceLock;
 
-        private volatile MemoryOrder _order; // making volatile to prohibit reordering in constructors
-
+        private readonly MemoryOrder _order;
+        private readonly IAtomicsOperator<T> _readerWriter;
+ 
         /// <summary>
         /// Creates new instance of <see cref="Atomic{T}"/>
         /// </summary>
@@ -29,6 +32,23 @@ namespace System.Threading.Atomics
             if (!order.IsSpported()) throw new ArgumentException(string.Format("{0} is not supported", order));
 
             _storage = GetStorage(order);
+            
+            if (PrimitiveIntrinsics.Supports<T>())
+            {
+                _readerWriter = (IAtomicsOperator<T>) PrimitiveIntrinsics;
+            }
+            else if (_storage as Atomic<T> == this)
+            {
+                _readerWriter = PodSize == 64
+                    ? new _64BitPod<T>()
+                    : PodSize == 32
+                        ? new _32BitPod<T>()
+                        : (IAtomicsOperator<T>)this;
+            }
+            else
+            {
+                throw new NotSupportedException(string.Format("{0} type is not supported", typeof(T)));
+            }
 
             if (order == MemoryOrder.SeqCst && object.ReferenceEquals(_storage, this))
                 _instanceLock = new object();
@@ -46,6 +66,22 @@ namespace System.Threading.Atomics
             if (!order.IsSpported()) throw new ArgumentException(string.Format("{0} is not supported", order));
 
             _storage = GetStorage(order);
+            if (PrimitiveIntrinsics.Supports<T>())
+            {
+                _readerWriter = (IAtomicsOperator<T>)PrimitiveIntrinsics;
+            }
+            else if (_storage as Atomic<T> == this)
+            {
+                _readerWriter = PodSize == 64
+                    ? new _64BitPod<T>()
+                    : PodSize == 32
+                        ? new _32BitPod<T>()
+                        : (IAtomicsOperator<T>)this;
+            }
+            else
+            {
+                throw new NotSupportedException(string.Format("{0} type is not supported", typeof(T)));
+            }
 
             if (order == MemoryOrder.SeqCst && object.ReferenceEquals(_storage, this))
                 _instanceLock = new object();
@@ -59,7 +95,7 @@ namespace System.Threading.Atomics
             var type = typeof (T);
             if (type == typeof (bool))
             {
-                return (IAtomic<T>)(IAtomic<bool>)new AtomicBoolean();
+                return (IAtomic<T>)(IAtomic<bool>)new AtomicBoolean(order);
             }
             if (type == typeof(int))
             {
@@ -67,7 +103,7 @@ namespace System.Threading.Atomics
             }
             if (type == typeof(long))
             {
-                return (IAtomic<T>)(IAtomic<long>)new AtomicLong();
+                return (IAtomic<T>)(IAtomic<long>)new AtomicLong(order);
             }
             return this;
         }
@@ -75,6 +111,7 @@ namespace System.Threading.Atomics
         /// <summary>
         /// Gets or sets atomically the underlying value
         /// </summary>
+        /// <remarks>This method does use CAS approach for value setting. To avoid this use <see cref="Load"/> and <see cref="Set"/> methods pair for get/set operations respectively</remarks>
         public T Value
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -87,25 +124,22 @@ namespace System.Threading.Atomics
         {
             get
             {
-                var reader = PrimitiveIntrinsics as IAtomicsOperator<T> ?? this;
-
-                if (_order != MemoryOrder.SeqCst) return reader.Read(ref _value);
+                if (_order != MemoryOrder.SeqCst) return _readerWriter.Read(ref _value);
 
                 lock (_instanceLock)
                 {
-                    return reader.Read(ref _value);
+                    return _readerWriter.Read(ref _value);
                 }
             }
             set
             {
-                var writer = PrimitiveIntrinsics as IAtomicsOperator<T> ?? this;
+                var writer = _readerWriter;
 
                 if (_order == MemoryOrder.SeqCst)
                 {
                     lock (_instanceLock)
                     {
-                        Interlocked.MemoryBarrier();
-                        _value = value;
+                        Platform.Operations.WriteSeqCst(ref _value, ref value);
                     }
                 }
                 else if (_order.IsAcquireRelease())
@@ -137,9 +171,79 @@ namespace System.Threading.Atomics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         T IAtomicsOperator<T>.Read(ref T location1)
         {
-            T result = location1;
-            Interlocked.MemoryBarrier();
-            return result;
+            return Platform.Operations.Read(ref location1);
+        }
+
+        bool IAtomicsOperator<T>.Supports<TType>()
+        {
+            return true;
+        }
+
+        /// <summary>
+        /// Gets value whether the object is lock-free
+        /// </summary>
+        public bool IsLockFree
+        {
+            get { return _order != MemoryOrder.SeqCst || (_order.IsAcquireRelease() && PodSize <= IntPtr.Size); }
+        }
+
+        /// <summary>
+        /// Sets the underlying value with provided <paramref name="order"/>
+        /// </summary>
+        /// <param name="value">The value to store</param>
+        /// <param name="order">The <see cref="MemoryOrder"/> to achive</param>
+        public void Set(T value, MemoryOrder order)
+        {
+            switch (order)
+            {
+                case MemoryOrder.Relaxed:
+                    if (ReferenceEquals(_storage, this))
+                        Platform.Operations.Write(ref _value, ref value);
+                    break;
+                case MemoryOrder.Consume:
+                    throw new NotSupportedException();
+                case MemoryOrder.Acquire:
+                    throw new InvalidOperationException("Cannot set (store) value with Acquire semantics");
+                case MemoryOrder.Release:
+                case MemoryOrder.AcqRel:
+                    Platform.Operations.WriteRelease(ref _value, ref value);
+                    break;
+                case MemoryOrder.SeqCst:
+                    Platform.Operations.WriteSeqCst(ref _value, ref value);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException("order");
+            }
+        }
+
+        /// <summary>
+        /// Gets the underlying value with provided <paramref name="order"/>
+        /// </summary>
+        /// <param name="order">The <see cref="MemoryOrder"/> to achive</param>
+        /// <returns>The underlying value with provided <paramref name="order"/></returns>
+        public T Load(MemoryOrder order)
+        {
+            switch (order)
+            {
+                case MemoryOrder.Relaxed:
+                    return Platform.Operations.Read(ref _value);
+                case MemoryOrder.Consume:
+                    throw new NotSupportedException();
+                case MemoryOrder.Acquire:
+                    return Platform.Operations.ReadAcquire(ref _value);
+                case MemoryOrder.Release:
+                    throw new InvalidOperationException("Cannot get (load) value with Release semantics");
+                case MemoryOrder.AcqRel:
+                    return Platform.Operations.ReadAcquire(ref _value);
+                case MemoryOrder.SeqCst:
+                    if (PodSize > IntPtr.Size)
+                        lock (_instanceLock)
+                            return Platform.Operations.ReadSeqCst(ref _value);
+
+                    return Platform.Operations.ReadSeqCst(ref _value);
+                default:
+                    throw new ArgumentOutOfRangeException("order");
+            }
         }
 
         /// <summary>
@@ -150,7 +254,7 @@ namespace System.Threading.Atomics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator T(Atomic<T> atomic)
         {
-            return atomic.Value;
+            return atomic == null ? default(T) : atomic.Value;
         }
 
         /// <summary>
@@ -194,7 +298,7 @@ namespace System.Threading.Atomics
         /// <returns><c>true</c> if <paramref name="other"/> is equal to this instance; otherwise, <c>false</c>.</returns>
         public bool Equals(Atomic<T> other)
         {
-            return this.Value.Equals(other.Value);
+            return !object.ReferenceEquals(other, null) && (object.ReferenceEquals(this, other) || this.Value.Equals(other.Value));
         }
 
         /// <summary>
@@ -206,6 +310,17 @@ namespace System.Threading.Atomics
         public static bool operator ==(Atomic<T> x, T y)
         {
             return (!object.ReferenceEquals(x, null) && x.Value.Equals(y));
+        }
+
+        /// <summary>
+        /// Returns a value that indicates whether <see cref="Atomic{T}"/> and <see cref="Atomic{T}"/> are equal.
+        /// </summary>
+        /// <param name="x">The first value (<see cref="AtomicInteger"/>) to compare.</param>
+        /// <param name="y">The second value (<see cref="int"/>) to compare.</param>
+        /// <returns><c>true</c> if <paramref name="x"/> and <paramref name="y"/> are equal; otherwise, <c>false</c>.</returns>
+        public static bool operator ==(Atomic<T> x, Atomic<T> y)
+        {
+            return (!object.ReferenceEquals(x, null) && x.Equals(y));
         }
 
         /// <summary>
@@ -223,6 +338,14 @@ namespace System.Threading.Atomics
             return !value.Equals(y);
         }
 
+        public static bool operator !=(Atomic<T> x, Atomic<T> y)
+        {
+            if (object.ReferenceEquals(x, null))
+                return false;
+
+            return !x.Equals(y);
+        }
+
         private class PrimitiveAtomics : IAtomicsOperator<int>,
             IAtomicsOperator<long>,
             IAtomicsOperator<double>,
@@ -234,6 +357,11 @@ namespace System.Threading.Atomics
             IAtomicsOperator<short>,
             IAtomicsOperator<ushort>
         {
+            public bool Supports<TType>() where TType : struct
+            {
+                return this as IAtomicsOperator<TType> != null;
+            }
+
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             int IAtomicsOperator<int>.CompareExchange(ref int location1, int value, int comparand)
             {

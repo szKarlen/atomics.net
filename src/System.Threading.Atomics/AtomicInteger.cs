@@ -11,7 +11,7 @@ namespace System.Threading.Atomics
 #pragma warning restore 0659, 0661
     {
         private volatile MemoryOrder _order; // making volatile to prohibit reordering in constructors
-        private int _value;
+        private volatile int _value;
 
         private volatile object _instanceLock;
 
@@ -48,6 +48,7 @@ namespace System.Threading.Atomics
         /// <summary>
         /// Gets or sets atomically the underlying value
         /// </summary>
+        /// <remarks>This method does use CAS approach for value setting. To avoid this use <see cref="Load"/> and <see cref="Set"/> methods pair for get/set operations respectively</remarks>
         public int Value
         {
             get
@@ -70,16 +71,79 @@ namespace System.Threading.Atomics
                 }
                 else if (_order.IsAcquireRelease())
                 {
-                    // should use compare_exchange_weak 
-                    // but implementing CAS using compare_exchange_strong since we are on .NET
-                    int currentValue = this._value;
+                    int currentValue;
                     int tempValue;
                     do
                     {
-                        tempValue = Interlocked.CompareExchange(ref this._value, value, currentValue);
-                    } while (tempValue != currentValue);
+                        currentValue = _value;
+                        tempValue = value;
+                    } while (_value != currentValue || Interlocked.CompareExchange(ref _value, tempValue, currentValue) != currentValue);
                 }
             }
+        }
+
+        /// <summary>
+        /// Sets the underlying value with provided <paramref name="order"/>
+        /// </summary>
+        /// <param name="value">The value to store</param>
+        /// <param name="order">The <see cref="MemoryOrder"/> to achive</param>
+        /// <remarks>Providing <see cref="MemoryOrder.Relaxed"/> writes the value as <see cref="MemoryOrder.Acquire"/></remarks>
+        public void Set(int value, MemoryOrder order)
+        {
+            switch (order)
+            {
+                case MemoryOrder.Relaxed:
+                    this._value = value;
+                    break;
+                case MemoryOrder.Consume:
+                    throw new NotSupportedException();
+                case MemoryOrder.Acquire:
+                    throw new InvalidOperationException("Cannot set (store) value with Acquire semantics");
+                case MemoryOrder.Release:
+                case MemoryOrder.AcqRel:
+                    this._value = value;
+                    break;
+                case MemoryOrder.SeqCst:
+                    lock (_instanceLock)
+                    {
+                        Interlocked.Exchange(ref _value, value);
+                    }
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException("order");
+            }
+        }
+
+        /// <summary>
+        /// Gets the underlying value with provided <paramref name="order"/>
+        /// </summary>
+        /// <param name="order">The <see cref="MemoryOrder"/> to achive</param>
+        /// <returns>The underlying value with provided <paramref name="order"/></returns>
+        /// <remarks>Providing <see cref="MemoryOrder.Relaxed"/> reads the value as <see cref="MemoryOrder.Acquire"/></remarks>
+        public int Load(MemoryOrder order)
+        {
+            switch (order)
+            {
+                case MemoryOrder.Relaxed:
+                    return Platform.Operations.Read(ref _value);
+                case MemoryOrder.Consume:
+                    throw new NotSupportedException();
+                case MemoryOrder.Acquire:
+                    return Platform.Operations.ReadAcquire(ref _value);
+                case MemoryOrder.Release:
+                    throw new InvalidOperationException("Cannot get (load) value with Release semantics");
+                case MemoryOrder.AcqRel:
+                    return Platform.Operations.ReadAcquire(ref _value);
+                case MemoryOrder.SeqCst:
+                    return Platform.Operations.ReadSeqCst(ref _value);
+                default:
+                    throw new ArgumentOutOfRangeException("order");
+            }
+        }
+
+        public bool IsLockFree
+        {
+            get { return _order != MemoryOrder.SeqCst || _order.IsAcquireRelease(); }
         }
 
         /// <summary>
@@ -284,6 +348,11 @@ namespace System.Threading.Atomics
         int IAtomicsOperator<int>.Read(ref int location1)
         {
             return Volatile.Read(ref location1);
+        }
+        
+        bool IAtomicsOperator<int>.Supports<TType>()
+        {
+            return typeof (TType) == typeof (int);
         }
     }
 }

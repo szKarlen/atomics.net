@@ -41,6 +41,9 @@
     <!-- A reference to the entire .NET Framework is automatically included -->
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Interop\Win32.cs" />
+    <Compile Include="_64BitPod.cs" />
+    <Compile Include="_32BitPod.cs" />
     <Compile Include="Atomic.cs" />
     <Compile Include="AtomicBoolean.cs" />
     <Compile Include="AtomicInteger.cs" />
@@ -51,6 +54,7 @@
     <Compile Include="MemoryOrder.cs" />
     <Compile Include="MemoryOrderHelpers.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="_x86Operations.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

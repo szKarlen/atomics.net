@@ -4,5 +4,7 @@ namespace System.Threading.Atomics
     {
         T CompareExchange(ref T location1, T value, T comparand);
         T Read(ref T location1);
+
+        bool Supports<TType>() where TType : struct;
     }
 }

@@ -12,8 +12,12 @@ namespace System.Threading.Atomics
     public sealed class AtomicReference<T> : IEquatable<T>, IEquatable<AtomicReference<T>> where T : class
 #pragma warning restore 0659, 0661
     {
+        /*
+         * volatile is no-op on x86-64
+         * used as _ReadWriteBarrier
+         */
         private volatile MemoryOrder _order;
-        private T _value;
+        private volatile T _value;
 
         private volatile object _instanceLock;
 
@@ -72,12 +76,13 @@ namespace System.Threading.Atomics
                 }
                 else if (_order.IsAcquireRelease())
                 {
-                    T currentValue = this._value;
+                    T currentValue;
                     T tempValue;
                     do
                     {
-                        tempValue = Interlocked.CompareExchange(ref this._value, value, currentValue);
-                    } while (tempValue != currentValue);
+                        currentValue = _value;
+                        tempValue = value;
+                    } while (_value != currentValue || Interlocked.CompareExchange(ref _value, tempValue, currentValue) != currentValue);
                 }
             }
         }
@@ -87,7 +92,7 @@ namespace System.Threading.Atomics
         /// </summary>
         /// <param name="setter">The setter to use</param>
         /// <returns>An updated value</returns>
-        public T Set(Func<T, T> setter)
+        public T Set(Func<T, T> setter, MemoryOrder order)
         {
             if (_order == MemoryOrder.SeqCst)
             {
@@ -101,6 +106,16 @@ namespace System.Threading.Atomics
                 return WriteAcqRel(setter);
             }
             return null;
+        }
+
+        /// <summary>
+        /// Sets atomically current <see cref="Value"/> by provided setter method
+        /// </summary>
+        /// <param name="setter">The setter to use</param>
+        /// <returns>An updated value</returns>
+        public T Set(Func<T, T> setter)
+        {
+            return Set(setter, this._order);
         }
 
         private T WriteAcqRel(Func<T, T> setter)
