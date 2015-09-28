@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Threading.Atomics.Operations;
 
 namespace System.Threading.Atomics
 {
@@ -114,17 +113,17 @@ namespace System.Threading.Atomics
             switch (order)
             {
                 case MemoryOrder.Relaxed:
-                    return Platform.Operations.Read(ref _value);
+                    return Platform.Read(ref _value);
                 case MemoryOrder.Consume:
                     throw new NotSupportedException();
                 case MemoryOrder.Acquire:
-                    return Platform.Operations.ReadAcquire(ref _value);
+                    return Platform.ReadAcquire(ref _value);
                 case MemoryOrder.Release:
                     throw new InvalidOperationException("Cannot get (load) value with Release semantics");
                 case MemoryOrder.AcqRel:
-                    return Platform.Operations.ReadAcquire(ref _value);
+                    return Platform.ReadAcquire(ref _value);
                 case MemoryOrder.SeqCst:
-                    return Platform.Operations.ReadSeqCst(ref _value);
+                    return Platform.ReadSeqCst(ref _value);
                 default:
                     throw new ArgumentOutOfRangeException("order");
             }

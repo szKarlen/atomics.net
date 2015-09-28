@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Threading.Atomics.Operations;
 
 namespace System.Threading.Atomics
 {
@@ -16,45 +15,22 @@ namespace System.Threading.Atomics
     {
         private T _value;
         private static readonly int PodSize = Marshal.SizeOf(typeof (T));
-        private static readonly PrimitiveAtomics PrimitiveIntrinsics = new PrimitiveAtomics();
+        private static readonly IAtomicsOperator<T> Intrinsics = new PrimitiveAtomics() as IAtomicsOperator<T>;
 
         private readonly IAtomic<T> _storage;
         private readonly object _instanceLock;
 
         private readonly MemoryOrder _order;
         private readonly IAtomicsOperator<T> _readerWriter;
- 
+
         /// <summary>
         /// Creates new instance of <see cref="Atomic{T}"/>
         /// </summary>
         /// <param name="order">Affects the way store operation occur. Default is <see cref="MemoryOrder.SeqCst"/> semantics which hurt performance</param>
         public Atomic(MemoryOrder order = MemoryOrder.SeqCst)
+            :this (default(T), order)
         {
-            if (!order.IsSpported()) throw new ArgumentException(string.Format("{0} is not supported", order));
-
-            _storage = GetStorage(order);
             
-            if (PrimitiveIntrinsics.Supports<T>())
-            {
-                _readerWriter = (IAtomicsOperator<T>) PrimitiveIntrinsics;
-            }
-            else if (_storage as Atomic<T> == this)
-            {
-                _readerWriter = PodSize == 64
-                    ? new _64BitPod<T>()
-                    : PodSize == 32
-                        ? new _32BitPod<T>()
-                        : (IAtomicsOperator<T>)this;
-            }
-            else
-            {
-                throw new NotSupportedException(string.Format("{0} type is not supported", typeof(T)));
-            }
-
-            if (order == MemoryOrder.SeqCst && object.ReferenceEquals(_storage, this))
-                _instanceLock = new object();
-
-            _order = order;
         }
 
         /// <summary>
@@ -67,17 +43,14 @@ namespace System.Threading.Atomics
             if (!order.IsSpported()) throw new ArgumentException(string.Format("{0} is not supported", order));
 
             _storage = GetStorage(order);
-            if (PrimitiveIntrinsics.Supports<T>())
+
+            if (Intrinsics != null && Intrinsics.Supports<T>())
             {
-                _readerWriter = (IAtomicsOperator<T>)PrimitiveIntrinsics;
+                _readerWriter = Intrinsics;
             }
             else if (_storage as Atomic<T> == this)
             {
-                _readerWriter = PodSize == 64
-                    ? new _64BitPod<T>()
-                    : PodSize == 32
-                        ? new _32BitPod<T>()
-                        : (IAtomicsOperator<T>)this;
+                _readerWriter = this;
             }
             else
             {
@@ -140,7 +113,7 @@ namespace System.Threading.Atomics
                 {
                     lock (_instanceLock)
                     {
-                        Platform.Operations.WriteSeqCst(ref _value, ref value);
+                        Platform.WriteSeqCst(ref _value, ref value);
                     }
                 }
                 else if (_order.IsAcquireRelease())
@@ -172,7 +145,7 @@ namespace System.Threading.Atomics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         T IAtomicsOperator<T>.Read(ref T location1)
         {
-            return Platform.Operations.Read(ref location1);
+            return Platform.Read(ref location1);
         }
 
         bool IAtomicsOperator<T>.Supports<TType>()
@@ -199,7 +172,7 @@ namespace System.Threading.Atomics
             {
                 case MemoryOrder.Relaxed:
                     if (ReferenceEquals(_storage, this))
-                        Platform.Operations.Write(ref _value, ref value);
+                        Platform.Write(ref _value, ref value);
                     break;
                 case MemoryOrder.Consume:
                     throw new NotSupportedException();
@@ -207,10 +180,10 @@ namespace System.Threading.Atomics
                     throw new InvalidOperationException("Cannot set (store) value with Acquire semantics");
                 case MemoryOrder.Release:
                 case MemoryOrder.AcqRel:
-                    Platform.Operations.WriteRelease(ref _value, ref value);
+                    Platform.WriteRelease(ref _value, ref value);
                     break;
                 case MemoryOrder.SeqCst:
-                    Platform.Operations.WriteSeqCst(ref _value, ref value);
+                    Platform.WriteSeqCst(ref _value, ref value);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException("order");
@@ -227,21 +200,21 @@ namespace System.Threading.Atomics
             switch (order)
             {
                 case MemoryOrder.Relaxed:
-                    return Platform.Operations.Read(ref _value);
+                    return Platform.Read(ref _value);
                 case MemoryOrder.Consume:
                     throw new NotSupportedException();
                 case MemoryOrder.Acquire:
-                    return Platform.Operations.ReadAcquire(ref _value);
+                    return Platform.ReadAcquire(ref _value);
                 case MemoryOrder.Release:
                     throw new InvalidOperationException("Cannot get (load) value with Release semantics");
                 case MemoryOrder.AcqRel:
-                    return Platform.Operations.ReadAcquire(ref _value);
+                    return Platform.ReadAcquire(ref _value);
                 case MemoryOrder.SeqCst:
                     if (PodSize > IntPtr.Size)
                         lock (_instanceLock)
-                            return Platform.Operations.ReadSeqCst(ref _value);
+                            return Platform.ReadSeqCst(ref _value);
 
-                    return Platform.Operations.ReadSeqCst(ref _value);
+                    return Platform.ReadSeqCst(ref _value);
                 default:
                     throw new ArgumentOutOfRangeException("order");
             }
