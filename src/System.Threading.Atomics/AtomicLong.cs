@@ -20,13 +20,9 @@ namespace System.Threading.Atomics
         /// </summary>
         /// <param name="order">Affects the way store operation occur. Default is <see cref="MemoryOrder.AcqRel"/> semantics</param>
         public AtomicLong(MemoryOrder order = MemoryOrder.AcqRel)
+            : this(0, order)
         {
-            if (!order.IsSpported()) throw new ArgumentException(string.Format("{0} is not supported", order));
-
-            if (order == MemoryOrder.SeqCst)
-                _instanceLock = new object();
-
-            _order = order;
+            
         }
 
         /// <summary>
@@ -42,7 +38,7 @@ namespace System.Threading.Atomics
                 _instanceLock = new object();
 
             _order = order;
-            this.Value = value;
+            this._value = value;
         }
 
         /// <summary>
@@ -82,6 +78,11 @@ namespace System.Threading.Atomics
             }
         }
 
+        /// <summary>
+        /// Sets the underlying value with provided <paramref name="order"/>
+        /// </summary>
+        /// <param name="value">The value to store</param>
+        /// <param name="order">The <see cref="MemoryOrder"/> to achive</param>
         public void Store(long value, MemoryOrder order)
         {
             switch (order)
@@ -108,6 +109,11 @@ namespace System.Threading.Atomics
             }
         }
 
+        /// <summary>
+        /// Gets the underlying value with provided <paramref name="order"/>
+        /// </summary>
+        /// <param name="order">The <see cref="MemoryOrder"/> to achive</param>
+        /// <returns>The underlying value with provided <paramref name="order"/></returns>
         public long Load(MemoryOrder order)
         {
             switch (order)
@@ -129,6 +135,9 @@ namespace System.Threading.Atomics
             }
         }
 
+        /// <summary>
+        /// Gets value whether the object is lock-free
+        /// </summary>
         public bool IsLockFree
         {
             get { return _order != MemoryOrder.SeqCst || _order.IsAcquireRelease(); }

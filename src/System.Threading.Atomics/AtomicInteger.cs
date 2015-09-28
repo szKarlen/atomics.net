@@ -20,13 +20,9 @@ namespace System.Threading.Atomics
         /// </summary>
         /// <param name="order">Affects the way store operation occur. Default is <see cref="MemoryOrder.AcqRel"/> semantics</param>
         public AtomicInteger(MemoryOrder order = MemoryOrder.AcqRel)
+            : this (0, order)
         {
-            if (!order.IsSpported()) throw new ArgumentException(string.Format("{0} is not supported", order));
-
-            if (order == MemoryOrder.SeqCst)
-                _instanceLock = new object();
-
-            _order = order;
+            
         }
 
         /// <summary>
@@ -42,7 +38,7 @@ namespace System.Threading.Atomics
                 _instanceLock = new object();
 
             _order = order;
-            this.Value = value;
+            this._value = value;
         }
 
         /// <summary>
@@ -141,6 +137,9 @@ namespace System.Threading.Atomics
             }
         }
 
+        /// <summary>
+        /// Gets value whether the object is lock-free
+        /// </summary>
         public bool IsLockFree
         {
             get { return _order != MemoryOrder.SeqCst || _order.IsAcquireRelease(); }

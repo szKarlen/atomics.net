@@ -40,16 +40,29 @@ namespace System.Threading.Atomics
             set { _storageInteger.Value = value ? 1 : 0; }
         }
 
+        /// <summary>
+        /// Sets the underlying value with provided <paramref name="order"/>
+        /// </summary>
+        /// <param name="value">The value to store</param>
+        /// <param name="order">The <see cref="MemoryOrder"/> to achive</param>
         public void Store(bool value, MemoryOrder order)
         {
             _storageInteger.Store(value ? 1 : 0, order);
         }
 
+        /// <summary>
+        /// Gets the underlying value with provided <paramref name="order"/>
+        /// </summary>
+        /// <param name="order">The <see cref="MemoryOrder"/> to achive</param>
+        /// <returns>The underlying value with provided <paramref name="order"/></returns>
         public bool Load(MemoryOrder order)
         {
             return _storageInteger.Load(order) != 0;
         }
 
+        /// <summary>
+        /// Gets value whether the object is lock-free
+        /// </summary>
         public bool IsLockFree
         {
             get { return _storageInteger.IsLockFree; }

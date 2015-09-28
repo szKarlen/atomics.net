@@ -26,13 +26,9 @@ namespace System.Threading.Atomics
         /// </summary>
         /// <param name="order">Affects the way store operation occur. Default is <see cref="MemoryOrder.AcqRel"/> semantics</param>
         public AtomicReference(MemoryOrder order = MemoryOrder.AcqRel)
+            : this(null, order)
         {
-            if (!order.IsSpported()) throw new ArgumentException(string.Format("{0} is not supported", order));
-
-            if (order == MemoryOrder.SeqCst)
-                _instanceLock = new object();
-
-            _order = order;
+            
         }
 
         /// <summary>
@@ -48,7 +44,7 @@ namespace System.Threading.Atomics
                 _instanceLock = new object();
 
             _order = order;
-            this.Value = initialValue;
+            this._value = initialValue;
         }
 
         /// <summary>
@@ -91,17 +87,18 @@ namespace System.Threading.Atomics
         /// Sets atomically current <see cref="Value"/> by provided setter method
         /// </summary>
         /// <param name="setter">The setter to use</param>
+        /// <param name="order">The <see cref="MemoryOrder"/> to achive</param>
         /// <returns>An updated value</returns>
         public T Set(Func<T, T> setter, MemoryOrder order)
         {
-            if (_order == MemoryOrder.SeqCst)
+            if (order == MemoryOrder.SeqCst)
             {
                 lock (_instanceLock)
                 {
                     return WriteAcqRel(setter);
                 }
             }
-            if (_order.IsAcquireRelease())
+            if (order.IsAcquireRelease())
             {
                 return WriteAcqRel(setter);
             }
