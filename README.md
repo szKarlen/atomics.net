@@ -11,6 +11,8 @@ Project aims to be very close to C++ 11 standard atomics by design and usage. Fo
 
 Although the library is a PCL itself, the minimum required version of .NET - 4.5. But you can compile for .NET 4.0 and earlier. The Itanium-related stuff (volatile reads with proper memory barriers usages, etc.) will be present (see [docs](Documentation/memorymodel101.md)).
 
+For ECMA MM implementations of CLI on ARM architecture the conditional compilation is support by using ARM_CPU directive.
+
 The default memory semantics for library's primitives is Acquire/Release, which fits very well with .NET Framework and CLR 2.0 memory model.
 
 The option for sequential consistency is implemented as a combination of Acquire/Release with sequential order emulation by mutual exclusion locks.
@@ -99,7 +101,7 @@ It is very straightforward to implement lock-free stack:
 ``` csharp
 public class AtomicStack<T>
 {
-    private AtomicReference<StackNode<T>> m_head = new AtomicReference<StackNode<T>>();
+    private AtomicReference<StackNode<T>> _head = new AtomicReference<StackNode<T>>();
     private readonly AtomicBoolean _isEmpty = new AtomicBoolean(true);
 
     public void Push(T item)
@@ -107,7 +109,7 @@ public class AtomicStack<T>
         m_head.Set(stackNode =>
         {
             StackNode<T> node = new StackNode<T>(item);
-            node.m_next = m_head;
+            node._next = _head;
 
             IsEmpty = false;
             
@@ -120,11 +122,11 @@ public class AtomicStack<T>
         if (IsEmpty)
             throw new InvalidOperationException();
             
-        return m_head.Set(stackNode =>
+        return _head.Set(stackNode =>
         {
-            IsEmpty = stackNode.m_next == null;
-            return stackNode.m_next;
-        }).m_value;
+            IsEmpty = stackNode._next == null;
+            return stackNode._next;
+        })._value;
     }
 
     public bool IsEmpty
@@ -135,9 +137,9 @@ public class AtomicStack<T>
 
     class StackNode<T>
     {
-        internal T m_value;
-        internal StackNode<T> m_next;
-        internal StackNode(T val) { m_value = val; }
+        internal T _value;
+        internal StackNode<T> _next;
+        internal StackNode(T val) { _value = val; }
     }
 }
 ```
