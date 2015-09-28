@@ -11,7 +11,7 @@ namespace System.Threading.Atomics
     public sealed class AtomicLong : IAtomic<long>, IEquatable<long>, IEquatable<AtomicLong>
 #pragma warning restore 0659, 0661
     {
-        private volatile MemoryOrder _order; // making volatile to prohibit reordering in constructors
+        private volatile MemoryOrder _order;
         private long _value;
 
         private volatile object _instanceLock;
@@ -49,7 +49,7 @@ namespace System.Threading.Atomics
         /// <summary>
         /// Gets or sets atomically the underlying value
         /// </summary>
-        /// <remarks>This method does use CAS approach for value setting. To avoid this use <see cref="Load"/> and <see cref="Set"/> methods pair for get/set operations respectively</remarks>
+        /// <remarks>This method does use CAS approach for value setting. To avoid this use <see cref="Load"/> and <see cref="Store"/> methods pair for get/set operations respectively</remarks>
         public long Value
         {
             get
@@ -83,7 +83,7 @@ namespace System.Threading.Atomics
             }
         }
 
-        public void Set(long value, MemoryOrder order)
+        public void Store(long value, MemoryOrder order)
         {
             switch (order)
             {

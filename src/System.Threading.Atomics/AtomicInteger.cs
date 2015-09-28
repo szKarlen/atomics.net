@@ -49,7 +49,7 @@ namespace System.Threading.Atomics
         /// <summary>
         /// Gets or sets atomically the underlying value
         /// </summary>
-        /// <remarks>This method does use CAS approach for value setting. To avoid this use <see cref="Load"/> and <see cref="Set"/> methods pair for get/set operations respectively</remarks>
+        /// <remarks>This method does use CAS approach for value setting. To avoid this use <see cref="Load"/> and <see cref="Store"/> methods pair for get/set operations respectively</remarks>
         public int Value
         {
             get
@@ -89,7 +89,7 @@ namespace System.Threading.Atomics
         /// <param name="value">The value to store</param>
         /// <param name="order">The <see cref="MemoryOrder"/> to achive</param>
         /// <remarks>Providing <see cref="MemoryOrder.Relaxed"/> writes the value as <see cref="MemoryOrder.Acquire"/></remarks>
-        public void Set(int value, MemoryOrder order)
+        public void Store(int value, MemoryOrder order)
         {
             switch (order)
             {

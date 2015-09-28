@@ -40,9 +40,9 @@ namespace System.Threading.Atomics
             set { _storageInteger.Value = value ? 1 : 0; }
         }
 
-        public void Set(bool value, MemoryOrder order)
+        public void Store(bool value, MemoryOrder order)
         {
-            _storageInteger.Set(value ? 1 : 0, order);
+            _storageInteger.Store(value ? 1 : 0, order);
         }
 
         public bool Load(MemoryOrder order)

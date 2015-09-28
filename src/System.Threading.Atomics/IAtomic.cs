@@ -12,7 +12,7 @@
         /// </summary>
         /// <param name="value">The value to store</param>
         /// <param name="order">The <see cref="MemoryOrder"/> to achive</param>
-        void Set(T value, MemoryOrder order);
+        void Store(T value, MemoryOrder order);
 
         /// <summary>
         /// Gets the underlying value with provided <paramref name="order"/>

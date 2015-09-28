@@ -112,7 +112,7 @@ namespace System.Threading.Atomics
         /// <summary>
         /// Gets or sets atomically the underlying value
         /// </summary>
-        /// <remarks>This method does use CAS approach for value setting. To avoid this use <see cref="Load"/> and <see cref="Set"/> methods pair for get/set operations respectively</remarks>
+        /// <remarks>This method does use CAS approach for value setting. To avoid this use <see cref="Load"/> and <see cref="Store"/> methods pair for get/set operations respectively</remarks>
         public T Value
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -193,7 +193,7 @@ namespace System.Threading.Atomics
         /// </summary>
         /// <param name="value">The value to store</param>
         /// <param name="order">The <see cref="MemoryOrder"/> to achive</param>
-        public void Set(T value, MemoryOrder order)
+        public void Store(T value, MemoryOrder order)
         {
             switch (order)
             {
