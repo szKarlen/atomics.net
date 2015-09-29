@@ -27,8 +27,9 @@ namespace System.Threading.Atomics
         /// Creates new instance of <see cref="Atomic{T}"/>
         /// </summary>
         /// <param name="order">Affects the way store operation occur. Default is <see cref="MemoryOrder.SeqCst"/> semantics which hurt performance</param>
-        public Atomic(MemoryOrder order = MemoryOrder.SeqCst)
-            :this (default(T), order)
+        /// <param name="align">True to store the underlying value aligned, otherwise False</param>
+        public Atomic(MemoryOrder order = MemoryOrder.SeqCst, bool align = false)
+            :this (default(T), order, align)
         {
             
         }
@@ -38,11 +39,12 @@ namespace System.Threading.Atomics
         /// </summary>
         /// <param name="value">The value to store</param>
         /// <param name="order">Affects the way store operation occur. Default is <see cref="MemoryOrder.SeqCst"/> semantics which hurt performance</param>
-        public Atomic(T value, MemoryOrder order = MemoryOrder.SeqCst)
+        /// <param name="align">True to store the underlying value aligned, otherwise False</param>
+        public Atomic(T value, MemoryOrder order = MemoryOrder.SeqCst, bool align = false)
         {
             if (!order.IsSpported()) throw new ArgumentException(string.Format("{0} is not supported", order));
 
-            _storage = GetStorage(order);
+            _storage = GetStorage(order, align);
 
             if (Intrinsics != null && Intrinsics.Supports<T>())
             {
@@ -68,20 +70,20 @@ namespace System.Threading.Atomics
             _storage.Value = value;
         }
 
-        private IAtomic<T> GetStorage(MemoryOrder order)
+        private IAtomic<T> GetStorage(MemoryOrder order, bool align)
         {
             var type = typeof (T);
             if (type == typeof (bool))
             {
-                return (IAtomic<T>)(IAtomic<bool>)new AtomicBoolean(order);
+                return (IAtomic<T>)(IAtomic<bool>)new AtomicBoolean(order, align);
             }
             if (type == typeof(int))
             {
-                return (IAtomic<T>)(IAtomic<int>)new AtomicInteger(order);
+                return (IAtomic<T>)(IAtomic<int>)new AtomicInteger(order, align);
             }
             if (type == typeof(long))
             {
-                return (IAtomic<T>)(IAtomic<long>)new AtomicLong(order);
+                return (IAtomic<T>)(IAtomic<long>)new AtomicLong(order, align);
             }
             return this;
         }

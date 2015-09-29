@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace System.Threading.Atomics
 {
@@ -11,7 +12,7 @@ namespace System.Threading.Atomics
 #pragma warning restore 0659, 0661
     {
         private volatile MemoryOrder _order; // making volatile to prohibit reordering in constructors
-        private volatile int _value;
+        private readonly BoxedInt32 _storage;
 
         private volatile object _instanceLock = new object();
 
@@ -19,8 +20,9 @@ namespace System.Threading.Atomics
         /// Creates new instance of <see cref="AtomicInteger"/>
         /// </summary>
         /// <param name="order">Affects the way store operation occur. Default is <see cref="MemoryOrder.AcqRel"/> semantics</param>
-        public AtomicInteger(MemoryOrder order = MemoryOrder.AcqRel)
-            : this (0, order)
+        /// <param name="align">True to store the underlying value aligned, otherwise False</param>
+        public AtomicInteger(MemoryOrder order = MemoryOrder.AcqRel, bool align = false)
+            : this(0, order, align)
         {
             
         }
@@ -30,12 +32,58 @@ namespace System.Threading.Atomics
         /// </summary>
         /// <param name="value">The value to store</param>
         /// <param name="order">Affects the way store operation occur. Load operations are always use <see cref="MemoryOrder.Acquire"/> semantics</param>
-        public AtomicInteger(int value, MemoryOrder order = MemoryOrder.AcqRel)
+        /// <param name="align">True to store the underlying value aligned, otherwise False</param>
+        public AtomicInteger(int value, MemoryOrder order = MemoryOrder.AcqRel, bool align = false)
         {
             if (!order.IsSpported()) throw new ArgumentException(string.Format("{0} is not supported", order));
 
             _order = order;
-            this._value = value;
+            this._storage = BoxedInt32.Create(value, align);
+        }
+
+        [StructLayout(LayoutKind.Explicit)]
+        class BoxedInt32
+        {
+            private const int CacheLineSize = 64;
+
+            [FieldOffset(0)]
+            public int value;
+
+            public BoxedInt32(int value)
+            {
+                this.value = value;
+            }
+
+            [StructLayout(LayoutKind.Explicit)]
+            class AlignedBoxedInt32 : BoxedInt32
+            {
+                [FieldOffset(0)]
+                public new int value;
+
+                [FieldOffset(4)]
+                private __32BitAlignedValue _alignedValue;
+
+                public AlignedBoxedInt32(int value) : base(value)
+                {
+                }
+            }
+
+            [StructLayout(LayoutKind.Explicit, Size = CacheLineSize - sizeof(int))]
+            unsafe struct __32BitAlignedValue
+            {
+                [FieldOffset(0)]
+                private fixed byte pad[CacheLineSize - sizeof(int)];
+            }
+
+            public static BoxedInt32 Create(bool aligned)
+            {
+                return Create(0, aligned);
+            }
+
+            public static BoxedInt32 Create(int value, bool aligned)
+            {
+                return aligned ? new AlignedBoxedInt32(value) : new BoxedInt32(value);
+            }
         }
 
         /// <summary>
@@ -46,11 +94,11 @@ namespace System.Threading.Atomics
         {
             get
             {
-                if (_order != MemoryOrder.SeqCst) return Volatile.Read(ref _value);
+                if (_order != MemoryOrder.SeqCst) return Volatile.Read(ref _storage.value);
 
                 lock (_instanceLock)
                 {
-                    return Volatile.Read(ref _value);
+                    return Volatile.Read(ref _storage.value);
                 }
             }
             set
@@ -59,7 +107,7 @@ namespace System.Threading.Atomics
                 {
                     lock (_instanceLock)
                     {
-                        Interlocked.Exchange(ref _value, value); // for processors cache coherence
+                        Interlocked.Exchange(ref _storage.value, value); // for processors cache coherence
                     }
                 }
                 else if (_order.IsAcquireRelease())
@@ -68,9 +116,9 @@ namespace System.Threading.Atomics
                     int tempValue;
                     do
                     {
-                        currentValue = _value;
+                        currentValue = _storage.value;
                         tempValue = value;
-                    } while (_value != currentValue || Interlocked.CompareExchange(ref _value, tempValue, currentValue) != currentValue);
+                    } while (_storage.value != currentValue || Interlocked.CompareExchange(ref _storage.value, tempValue, currentValue) != currentValue);
                 }
             }
         }
@@ -86,7 +134,7 @@ namespace System.Threading.Atomics
             switch (order)
             {
                 case MemoryOrder.Relaxed:
-                    this._value = value;
+                    this._storage.value = value;
                     break;
                 case MemoryOrder.Consume:
                     throw new NotSupportedException();
@@ -94,12 +142,12 @@ namespace System.Threading.Atomics
                     throw new InvalidOperationException("Cannot set (store) value with Acquire semantics");
                 case MemoryOrder.Release:
                 case MemoryOrder.AcqRel:
-                    this._value = value;
+                    this._storage.value = value;
                     break;
                 case MemoryOrder.SeqCst:
                     lock (_instanceLock)
                     {
-                        Interlocked.Exchange(ref _value, value);
+                        Interlocked.Exchange(ref _storage.value, value);
                     }
                     break;
                 default:
@@ -118,17 +166,17 @@ namespace System.Threading.Atomics
             switch (order)
             {
                 case MemoryOrder.Relaxed:
-                    return Platform.Read(ref _value);
+                    return Platform.Read(ref _storage.value);
                 case MemoryOrder.Consume:
                     throw new NotSupportedException();
                 case MemoryOrder.Acquire:
-                    return Platform.ReadAcquire(ref _value);
+                    return Platform.ReadAcquire(ref _storage.value);
                 case MemoryOrder.Release:
                     throw new InvalidOperationException("Cannot get (load) value with Release semantics");
                 case MemoryOrder.AcqRel:
-                    return Platform.ReadAcquire(ref _value);
+                    return Platform.ReadAcquire(ref _storage.value);
                 case MemoryOrder.SeqCst:
-                    return Platform.ReadSeqCst(ref _value);
+                    return Platform.ReadSeqCst(ref _storage.value);
                 default:
                     throw new ArgumentOutOfRangeException("order");
             }
@@ -149,7 +197,7 @@ namespace System.Threading.Atomics
         /// <returns>The value of <paramref name="atomicInteger"/> incremented by 1.</returns>
         public static AtomicInteger operator ++(AtomicInteger atomicInteger)
         {
-            return Interlocked.Increment(ref atomicInteger._value);
+            return Interlocked.Increment(ref atomicInteger._storage.value);
         }
 
         /// <summary>
@@ -159,7 +207,7 @@ namespace System.Threading.Atomics
         /// <returns>The value of <paramref name="atomicInteger"/> decremented by 1.</returns>
         public static AtomicInteger operator --(AtomicInteger atomicInteger)
         {
-            return Interlocked.Decrement(ref atomicInteger._value);
+            return Interlocked.Decrement(ref atomicInteger._storage.value);
         }
 
         /// <summary>
@@ -170,7 +218,7 @@ namespace System.Threading.Atomics
         /// <returns>The result of adding value to <paramref name="atomicInteger"/></returns>
         public static int operator +(AtomicInteger atomicInteger, int value)
         {
-            return Interlocked.Add(ref atomicInteger._value, value);
+            return Interlocked.Add(ref atomicInteger._storage.value, value);
         }
 
         /// <summary>
@@ -181,7 +229,7 @@ namespace System.Threading.Atomics
         /// <returns>The result of subtracting value from <see cref="AtomicInteger"/></returns>
         public static int operator -(AtomicInteger atomicInteger, int value)
         {
-            return Interlocked.Add(ref atomicInteger._value, -value);
+            return Interlocked.Add(ref atomicInteger._storage.value, -value);
         }
 
         /// <summary>
@@ -206,7 +254,7 @@ namespace System.Threading.Atomics
                 int tempValue;
                 do
                 {
-                    tempValue = Interlocked.CompareExchange(ref atomicInteger._value, result, currentValue);
+                    tempValue = Interlocked.CompareExchange(ref atomicInteger._storage.value, result, currentValue);
                 } while (tempValue != currentValue);
 
             }
@@ -243,7 +291,7 @@ namespace System.Threading.Atomics
                 int tempValue;
                 do
                 {
-                    tempValue = Interlocked.CompareExchange(ref atomicInteger._value, result, currentValue);
+                    tempValue = Interlocked.CompareExchange(ref atomicInteger._storage.value, result, currentValue);
                 } while (tempValue != currentValue);
             }
             finally

@@ -10,13 +10,15 @@ namespace System.Threading.Atomics
     public sealed class AtomicBoolean : IAtomic<bool>, IEquatable<bool>, IEquatable<AtomicBoolean>
 #pragma warning restore 0659, 0661
     {
-        private volatile AtomicInteger _storageInteger;
+        private readonly AtomicInteger _storage;
 
         /// <summary>
         /// Creates new instance of <see cref="AtomicBoolean"/> with default False value
         /// </summary>
-        public AtomicBoolean(MemoryOrder order = MemoryOrder.AcqRel)
-            : this(false, order)
+        /// <param name="order">Affects the way store operation occur. Default is <see cref="MemoryOrder.AcqRel"/> semantics</param>
+        /// <param name="align">True to store the underlying value aligned, otherwise False</param>
+        public AtomicBoolean(MemoryOrder order = MemoryOrder.AcqRel, bool align = false)
+            : this(false, order, align)
         {
             
         }
@@ -26,9 +28,10 @@ namespace System.Threading.Atomics
         /// </summary>
         /// <param name="value">The value to store</param>
         /// <param name="order">Affects the way store operation occur. Default is <see cref="MemoryOrder.AcqRel"/> semantics</param>
-        public AtomicBoolean(bool value, MemoryOrder order = MemoryOrder.AcqRel)
+        /// <param name="align">True to store the underlying value aligned, otherwise False</param>
+        public AtomicBoolean(bool value, MemoryOrder order = MemoryOrder.AcqRel, bool align = false)
         {
-            _storageInteger = new AtomicInteger(value ? 1 : 0, order);
+            _storage = new AtomicInteger(value ? 1 : 0, order, align);
         }
 
         /// <summary>
@@ -36,8 +39,8 @@ namespace System.Threading.Atomics
         /// </summary>
         public bool Value
         {
-            get { return _storageInteger.Value != 0; }
-            set { _storageInteger.Value = value ? 1 : 0; }
+            get { return _storage.Value != 0; }
+            set { _storage.Value = value ? 1 : 0; }
         }
 
         /// <summary>
@@ -47,7 +50,7 @@ namespace System.Threading.Atomics
         /// <param name="order">The <see cref="MemoryOrder"/> to achive</param>
         public void Store(bool value, MemoryOrder order)
         {
-            _storageInteger.Store(value ? 1 : 0, order);
+            _storage.Store(value ? 1 : 0, order);
         }
 
         /// <summary>
@@ -57,7 +60,7 @@ namespace System.Threading.Atomics
         /// <returns>The underlying value with provided <paramref name="order"/></returns>
         public bool Load(MemoryOrder order)
         {
-            return _storageInteger.Load(order) != 0;
+            return _storage.Load(order) != 0;
         }
 
         /// <summary>
@@ -65,7 +68,7 @@ namespace System.Threading.Atomics
         /// </summary>
         public bool IsLockFree
         {
-            get { return _storageInteger.IsLockFree; }
+            get { return _storage.IsLockFree; }
         }
 
         /// <summary>
@@ -83,7 +86,7 @@ namespace System.Threading.Atomics
             int intValue = value.ToInt32();
             int intComparand = comparand.ToInt32();
 
-            return ((IAtomicsOperator<int>) _storageInteger).CompareExchange(ref intLocation, intValue, intComparand) == 0;
+            return ((IAtomicsOperator<int>) _storage).CompareExchange(ref intLocation, intValue, intComparand) == 0;
         }
 
         bool IAtomicsOperator<bool>.Read(ref bool location1)
