@@ -52,6 +52,10 @@ namespace System.Threading.Atomics
             {
                 _readerWriter = this;
             }
+            else if (_storage.Supports<T>())
+            {
+                _readerWriter = _storage;
+            }
             else
             {
                 throw new NotSupportedException(string.Format("{0} type is not supported", typeof(T)));
@@ -161,12 +165,7 @@ namespace System.Threading.Atomics
             get { return _order != MemoryOrder.SeqCst || (_order.IsAcquireRelease() && PodSize <= IntPtr.Size); }
         }
 
-        /// <summary>
-        /// Sets the underlying value with provided <paramref name="order"/>
-        /// </summary>
-        /// <param name="value">The value to store</param>
-        /// <param name="order">The <see cref="MemoryOrder"/> to achive</param>
-        public void Store(T value, MemoryOrder order)
+        void IAtomic<T>.Store(T value, MemoryOrder order)
         {
             switch (order)
             {
@@ -191,11 +190,16 @@ namespace System.Threading.Atomics
         }
 
         /// <summary>
-        /// Gets the underlying value with provided <paramref name="order"/>
+        /// Sets the underlying value with provided <paramref name="order"/>
         /// </summary>
+        /// <param name="value">The value to store</param>
         /// <param name="order">The <see cref="MemoryOrder"/> to achive</param>
-        /// <returns>The underlying value with provided <paramref name="order"/></returns>
-        public T Load(MemoryOrder order)
+        public void Store(T value, MemoryOrder order)
+        {
+            _storage.Store(value, order);
+        }
+
+        T IAtomic<T>.Load(MemoryOrder order)
         {
             switch (order)
             {
@@ -218,6 +222,16 @@ namespace System.Threading.Atomics
                 default:
                     throw new ArgumentOutOfRangeException("order");
             }
+        }
+
+        /// <summary>
+        /// Gets the underlying value with provided <paramref name="order"/>
+        /// </summary>
+        /// <param name="order">The <see cref="MemoryOrder"/> to achive</param>
+        /// <returns>The underlying value with provided <paramref name="order"/></returns>
+        public T Load(MemoryOrder order)
+        {
+            return _storage.Load(order);
         }
 
         /// <summary>

@@ -62,6 +62,10 @@
   <ItemGroup>
     <Compile Include="AtomicEqualityTests.cs" />
     <Compile Include="AtomicConstructorTests.cs" />
+    <Compile Include="AtomicBooleanLoadStoreTests.cs" />
+    <Compile Include="AtomicLoadStoreTests.cs" />
+    <Compile Include="AtomicLongLoadStoreTests.cs" />
+    <Compile Include="AtomicIntegerLoadStoreTests.cs" />
     <Compile Include="AtomicReferenceEqualityTests.cs" />
     <Compile Include="AtomicReferenceConstructorTests.cs" />
     <Compile Include="AtomicBooleanConstructorTests.cs" />

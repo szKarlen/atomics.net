@@ -13,7 +13,7 @@ namespace System.Threading.Atomics
         private volatile MemoryOrder _order;
         private long _value;
 
-        private volatile object _instanceLock;
+        private volatile object _instanceLock = new object();
 
         /// <summary>
         /// Creates new instance of <see cref="AtomicLong"/>
@@ -33,9 +33,6 @@ namespace System.Threading.Atomics
         public AtomicLong(long value, MemoryOrder order = MemoryOrder.AcqRel)
         {
             if (!order.IsSpported()) throw new ArgumentException(string.Format("{0} is not supported", order));
-
-            if (order == MemoryOrder.SeqCst)
-                _instanceLock = new object();
 
             _order = order;
             this._value = value;
