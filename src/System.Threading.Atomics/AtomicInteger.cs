@@ -55,6 +55,7 @@ namespace System.Threading.Atomics
             }
 
             [StructLayout(LayoutKind.Explicit)]
+            [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Portability", "CA1900:ValueTypeFieldsShouldBePortable", MessageId = "_alignedValue"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Portability", "CA1900:ValueTypeFieldsShouldBePortable", MessageId = "pad")]
             class AlignedBoxedInt32 : BoxedInt32
             {
                 [FieldOffset(0)]
