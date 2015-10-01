@@ -142,7 +142,7 @@ namespace System.Threading.Atomics
                     throw new InvalidOperationException("Cannot set (store) value with Acquire semantics");
                 case MemoryOrder.Release:
                 case MemoryOrder.AcqRel:
-                    this._storage.value = value;
+                    Interlocked.Exchange(ref _storage.value, value);
                     break;
                 case MemoryOrder.SeqCst:
                     lock (_instanceLock)
@@ -166,17 +166,20 @@ namespace System.Threading.Atomics
             switch (order)
             {
                 case MemoryOrder.Relaxed:
-                    return Platform.Read(ref _storage.value);
+                    return _storage.value;
                 case MemoryOrder.Consume:
                     throw new NotSupportedException();
                 case MemoryOrder.Acquire:
-                    return Platform.ReadAcquire(ref _storage.value);
+                    return Volatile.Read(ref _storage.value);
                 case MemoryOrder.Release:
                     throw new InvalidOperationException("Cannot get (load) value with Release semantics");
                 case MemoryOrder.AcqRel:
-                    return Platform.ReadAcquire(ref _storage.value);
+                    return Volatile.Read(ref _storage.value);
                 case MemoryOrder.SeqCst:
-                    return Platform.ReadSeqCst(ref _storage.value);
+                    lock (_instanceLock)
+                    {
+                        return Volatile.Read(ref _storage.value);
+                    }
                 default:
                     throw new ArgumentOutOfRangeException("order");
             }
