@@ -11,7 +11,7 @@ Project aims to be very close to C++ 11 standard atomics by design and usage. Fo
 
 Although the library is a PCL itself, the minimum required version of .NET - 4.5. But you can compile for .NET 4.0 and earlier. The Itanium-related stuff (volatile reads with proper memory barriers usages, etc.) will be present (see [docs](Documentation/memorymodel101.md)).
 
-For ECMA MM implementations of CLI on ARM architecture the conditional compilation is support by using ARM_CPU directive.
+For ECMA MM implementations of CLI on ARM architecture the conditional compilation is supported by using ARM_CPU directive.
 
 The default memory semantics for library's primitives is Acquire/Release, which fits very well with .NET Framework and CLR 2.0 memory model.
 
@@ -39,6 +39,11 @@ All primitives implement the implicit conversion operator overloads with atomic 
 
 Integers ranging from 8 to 64 bit are supported as well as unsigned ones.
 
+False Sharing
+-------
+
+`AtomicInteger` and `AtomicLong` classes has support for memory alignment alongside modern CPU's cache lines. Use flag `align` in constructor of either `Atomic<T>`, `AtomicInteger`, `AtomicLong` or `AtomicBoolean`. Only specializations of `Atomic<T>` with Int32 Int64 and Bool uses alignment.
+
 Sample usage
 -------
 
@@ -54,7 +59,7 @@ class Counter
     
     public Counter(int initialValue = 0, bool isReadOnly = false)
     {
-        _value = initialValue;
+        _value = initialValue; // or new AtomicInteger(align: true) for false sharing prevention
         _isReadOnly = isReadOnly;
     }
     
