@@ -49,7 +49,7 @@ namespace System.Threading.Atomics
             [FieldOffset(0)]
             public long value;
 
-            public BoxedInt64(long value)
+            private BoxedInt64(long value)
             {
                 this.value = value;
             }
