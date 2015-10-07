@@ -15,7 +15,7 @@ For ECMA MM implementations of CLI on ARM architecture the conditional compilati
 
 The default memory semantics for library's primitives is Acquire/Release, which fits very well with .NET Framework and CLR 2.0 memory model.
 
-The option for sequential consistency is implemented as a combination of Acquire/Release with sequential order emulation by mutual exclusion locks.
+The option for sequential consistency is implemented as a combination of Acquire/Release with sequential order emulation by mutual exclusion locks, which results into TSO.
 
 Specifing Acquire only or Release only flag falls back to full Acquire/Release semantics for get/set operations or combinations of.
 
@@ -55,7 +55,7 @@ using System;
 class Counter
 {
     private AtomicInteger _value;
-    private readonly AtomicBoolean _isReadOnly;
+    private readonly bool _isReadOnly;
     
     public Counter(int initialValue = 0, bool isReadOnly = false)
     {
@@ -111,7 +111,7 @@ public class AtomicStack<T>
 
     public void Push(T item)
     {
-        m_head.Set(stackNode =>
+        _head.Set(stackNode =>
         {
             StackNode<T> node = new StackNode<T>(item);
             node._next = _head;
