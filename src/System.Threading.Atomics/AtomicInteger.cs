@@ -128,8 +128,8 @@ namespace System.Threading.Atomics
         /// Sets the underlying value with provided <paramref name="order"/>
         /// </summary>
         /// <param name="value">The value to store</param>
-        /// <param name="order">The <see cref="MemoryOrder"/> to achive</param>
-        /// <remarks>Providing <see cref="MemoryOrder.Relaxed"/> writes the value as <see cref="MemoryOrder.Acquire"/></remarks>
+        /// <param name="order">The <see cref="MemoryOrder"/> to achieve</param>
+        /// <remarks>Providing <see cref="MemoryOrder.Relaxed"/> writes the value as <see cref="MemoryOrder.Acquire"/> on x86 systems</remarks>
         public void Store(int value, MemoryOrder order)
         {
             switch (order)
@@ -159,9 +159,9 @@ namespace System.Threading.Atomics
         /// <summary>
         /// Gets the underlying value with provided <paramref name="order"/>
         /// </summary>
-        /// <param name="order">The <see cref="MemoryOrder"/> to achive</param>
+        /// <param name="order">The <see cref="MemoryOrder"/> to achieve</param>
         /// <returns>The underlying value with provided <paramref name="order"/></returns>
-        /// <remarks>Providing <see cref="MemoryOrder.Relaxed"/> reads the value as <see cref="MemoryOrder.Acquire"/></remarks>
+        /// <remarks>Providing <see cref="MemoryOrder.Relaxed"/> reads the value as <see cref="MemoryOrder.Acquire"/> on x86 systems</remarks>
         public int Load(MemoryOrder order)
         {
             switch (order)
