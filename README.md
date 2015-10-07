@@ -42,7 +42,7 @@ Integers ranging from 8 to 64 bit are supported as well as unsigned ones.
 False Sharing
 -------
 
-`AtomicInteger` and `AtomicLong` classes has support for memory alignment alongside modern CPU's cache lines. Use flag `align` in constructor of either `Atomic<T>`, `AtomicInteger`, `AtomicLong` or `AtomicBoolean`. Only specializations of `Atomic<T>` with Int32 Int64 and Bool uses alignment.
+`AtomicInteger` and `AtomicLong` classes has support for memory alignment alongside modern CPU's cache lines. Use flag `align` in constructor of either `Atomic<T>`, `AtomicInteger`, `AtomicLong` or `AtomicBoolean`. Only specializations of `Atomic<T>` with Int32, Int64 and Bool uses alignment.
 
 Sample usage
 -------

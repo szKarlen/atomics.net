@@ -3,15 +3,13 @@
 This doc aims to provide some examples and ideas of how to implement LIFO, FIFO lock-free stack using atomics.net.
 For more detailed description of terms, please refer to [glossary](glossary.md).
 
-Acquire/Release through CAS approach
+CAS notes
 -------
 
 Usually **compare-and-swap (CAS)** is used in lock-free algorithms for locks, interlocked operations implementations, etc., especially `compare_exchange_weak` variation.
 Provided by the .NET Framework [`Interlocked.CompareExchange`](https://msdn.microsoft.com/ru-ru/library/system.threading.interlocked.compareexchange(v=vs.110).aspx) method is the C++ [`compare_and_exchange_strong`](http://en.cppreference.com/w/cpp/atomic/atomic/compare_exchange) analog. The `compare_exchange_weak` is not supported.
 
 Current implementation of atomics.net uses CAS approach for lock-free atomic operations.
-
-So any atomic primitive does use for get/set operations CAS in Acquire/Release mode.
 
 LIFO container aka Stack
 -------
