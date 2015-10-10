@@ -6,15 +6,17 @@ For more detailed description of terms, please refer to [glossary](glossary.md).
 atomics.net design and implementation
 -------
 
-Project aims to be very close to C++ 11 standard atomics by design and provides [memory order](http://en.cppreference.com/w/cpp/atomic/memory_order) flags for primitives. Some of them are prohibited and not supported. For example, the Relaxed flag from C++ 11 compatible is marked as obsolete with compiler warning and exception at runtime.
+Project aims to be very close to C++ 11 standard atomics by design and provides [memory order](http://en.cppreference.com/w/cpp/atomic/memory_order) flags for primitives. Some of them are prohibited and not supported. For example, the `Relaxed` flag from C++ 11 compatible is marked as obsolete with compiler warning. `Consume` flag results into exception at runtime.
 
 Although the library is a PCL itself, the minimum required version of .NET - 4.5. But you can compile for .NET 4.0 and earlier. The Itanium-related stuff (reorderings, barrier/fences usages, etc.) will be present (discussed a little bit later [below](#itanium)).
 
-The default memory semantics for atomics.net's primitives is Acquire/Release, which fits very well with .NET Framework and CLR 2.0 memory model.
+For ECMA MM implementations of CLI on ARM architecture the conditional compilation is supported by using ARM_CPU directive.
 
-The option for sequential consistency is implemented as a combination of Acquire/Release with sequential order emulation by mutual exclusion locks.
+The default memory semantics for the library's primitives (like `Atomic<T>`, etc.) is `MemoryOrder.SeqCst`, whereas `AtomicReference<T>` uses `MemoryOrder.AcqRel`, which fits very well with CAS approach and CLR 2.0 memeory model.
 
-Specifing Acquire only or Release only flag falls back to full Acquire/Release semantics.
+The option for sequential consistency (i.e. `SeqCst`) is implemented by using intrinsic functions (with compilation to proper CPU instruction) or a combination of Acquire/Release with sequential order emulation through exclusion locks, when atomic read/writes to particular POD are not supported by HW.
+
+Specifing Acquire only or Release only flag falls back to full Acquire/Release semantics for get/set operations or combinations of.
 
 x86-x64 memory model vs ECMA
 -------

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -9,19 +10,17 @@ namespace System.Threading.Atomics
     /// </summary>
     /// <typeparam name="T">The underlying struct's type</typeparam>
     [DebuggerDisplay("{Value}")]
-#pragma warning disable 0659, 0661
-    public sealed class Atomic<T> : IAtomic<T>, IEquatable<T>, IEquatable<Atomic<T>> where T : struct, IEquatable<T>
-#pragma warning restore 0659, 0661
+    public sealed class Atomic<T> : IAtomicRef<T>, IEquatable<T>, IEquatable<Atomic<T>> where T : struct, IEquatable<T>
     {
         private T _value;
         private static readonly int PodSize = Marshal.SizeOf(typeof (T));
-        private static readonly IAtomicsOperator<T> Intrinsics = new PrimitiveAtomics() as IAtomicsOperator<T>;
+        private static readonly IAtomicOperators<T> Intrinsics = new PrimitiveAtomics() as IAtomicOperators<T>;
 
-        private readonly IAtomic<T> _storage;
-        private readonly object _instanceLock;
+        private readonly IAtomicRef<T> _storage;
+        private readonly object _instanceLock = new object();
 
         private readonly MemoryOrder _order;
-        private readonly IAtomicsOperator<T> _readerWriter;
+        private readonly IAtomicOperators<T> _writer;
 
         /// <summary>
         /// Creates new instance of <see cref="Atomic{T}"/>
@@ -48,44 +47,128 @@ namespace System.Threading.Atomics
 
             if (Intrinsics != null && Intrinsics.Supports<T>())
             {
-                _readerWriter = Intrinsics;
+                _writer = Intrinsics;
             }
             else if (_storage as Atomic<T> == this)
             {
-                _readerWriter = this;
+                _writer = this;
             }
             else if (_storage.Supports<T>())
             {
-                _readerWriter = _storage;
+                _writer = _storage;
             }
             else
             {
                 throw new NotSupportedException(string.Format("{0} type is not supported", typeof(T)));
             }
 
-            if (order == MemoryOrder.SeqCst && object.ReferenceEquals(_storage, this))
+            if (object.ReferenceEquals(_storage, this) || _storage is LockBasedAtomic)
                 _instanceLock = new object();
 
             _order = order;
             _storage.Value = value;
         }
 
-        private IAtomic<T> GetStorage(MemoryOrder order, bool align)
+        private IAtomicRef<T> GetStorage(MemoryOrder order, bool align)
         {
             var type = typeof (T);
             if (type == typeof (bool))
             {
-                return (IAtomic<T>)(IAtomic<bool>)new AtomicBoolean(order, align);
+                return (IAtomicRef<T>)(IAtomicRef<bool>)new AtomicBoolean(order, align);
             }
             if (type == typeof(int))
             {
-                return (IAtomic<T>)(IAtomic<int>)new AtomicInteger(order, align);
+                return (IAtomicRef<T>)(IAtomicRef<int>)new AtomicInteger(order, align);
             }
             if (type == typeof(long))
             {
-                return (IAtomic<T>)(IAtomic<long>)new AtomicLong(order, align);
+                return (IAtomicRef<T>)(IAtomicRef<long>)new AtomicLong(order, align);
             }
-            return this;
+            if (AtomicRWSupported() || PodSize <= IntPtr.Size)
+                return this;
+            return new LockBasedAtomic(this);
+        }
+
+        class LockBasedAtomic : IAtomicRef<T>
+        {
+            private readonly Atomic<T> _atomic;
+
+            public LockBasedAtomic(Atomic<T> atomic)
+            {
+                _atomic = atomic;
+            }
+
+            public T CompareExchange(ref T location1, T value, T comparand)
+            {
+                lock (_atomic._instanceLock)
+                {
+                    return ((IAtomic<T>) _atomic).CompareExchange(ref location1, value, comparand);
+                }
+            }
+
+            public bool Supports<TType>() where TType : struct
+            {
+                return true;
+            }
+
+            public T Value
+            {
+                get
+                {
+                    lock (_atomic._instanceLock)
+                    {
+                        return ((IAtomic<T>) _atomic).Value;
+                    }
+                }
+                set
+                {
+                    lock (_atomic._instanceLock)
+                    {
+                        ((IAtomic<T>) _atomic).Value = value;
+                    }
+                }
+            }
+
+            public void Store(T value, MemoryOrder order)
+            {
+                lock (_atomic._instanceLock)
+                {
+                    ((IAtomic<T>)_atomic).Store(value, order);
+                }
+            }
+
+            public T Load(MemoryOrder order)
+            {
+                lock (_atomic._instanceLock)
+                {
+                    return ((IAtomic<T>)_atomic).Load(order);
+                }
+            }
+
+            public void Store(ref T value, MemoryOrder order)
+            {
+                lock (_atomic._instanceLock)
+                {
+                    ((IAtomic<T>)_atomic).Store(value, order);
+                }
+            }
+
+            public bool IsLockFree { get { return false; } }
+        }
+
+        private static bool AtomicRWSupported()
+        {
+            var podType = typeof (T);
+            return podType == typeof(bool)
+                || podType == typeof(char)
+                || podType == typeof(byte)
+                || podType == typeof(sbyte)
+                || podType == typeof(Int16)
+                || podType == typeof(UInt16)
+                || podType == typeof(int)
+                || podType == typeof(uint)
+                || podType == typeof(float)
+                || (IntPtr.Size == 8 && (podType == typeof(double) || podType == typeof(long)));
         }
 
         /// <summary>
@@ -102,40 +185,26 @@ namespace System.Threading.Atomics
 
         T IAtomic<T>.Value
         {
-            get
-            {
-                if (_order != MemoryOrder.SeqCst) return _readerWriter.Read(ref _value);
-
-                lock (_instanceLock)
-                {
-                    return _readerWriter.Read(ref _value);
-                }
-            }
+            get { return Platform.Read(ref _value); }
             set
             {
-                var writer = _readerWriter;
-
                 if (_order == MemoryOrder.SeqCst)
                 {
-                    lock (_instanceLock)
-                    {
-                        Platform.WriteSeqCst(ref _value, ref value);
-                    }
+                    Platform.WriteSeqCst(ref _value, ref value);
+                    return;
                 }
-                else if (_order.IsAcquireRelease())
+
+                T currentValue = this._value;
+                T tempValue;
+                do
                 {
-                    T currentValue = this._value;
-                    T tempValue;
-                    do
-                    {
-                        tempValue = writer.CompareExchange(ref this._value, value, currentValue);
-                    } while (!tempValue.Equals(currentValue));
-                }
+                    tempValue = _writer.CompareExchange(ref this._value, value, currentValue);
+                } while (!tempValue.Equals(currentValue));
             }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        T IAtomicsOperator<T>.CompareExchange(ref T location1, T value, T comparand)
+        T IAtomicOperators<T>.CompareExchange(ref T location1, T value, T comparand)
         {
             T temp = location1;
             if (!temp.Equals(comparand))
@@ -148,13 +217,7 @@ namespace System.Threading.Atomics
             return temp;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        T IAtomicsOperator<T>.Read(ref T location1)
-        {
-            return Platform.Read(ref location1);
-        }
-
-        bool IAtomicsOperator<T>.Supports<TType>()
+        bool IAtomicOperators<T>.Supports<TType>()
         {
             return true;
         }
@@ -164,16 +227,25 @@ namespace System.Threading.Atomics
         /// </summary>
         public bool IsLockFree
         {
-            get { return _order != MemoryOrder.SeqCst || (_order.IsAcquireRelease() && PodSize <= IntPtr.Size); }
+            get
+            {
+                if (object.ReferenceEquals(_storage, this))
+                    return AtomicRWSupported() || PodSize <= IntPtr.Size;
+                return _storage.IsLockFree;
+            }
         }
 
         void IAtomic<T>.Store(T value, MemoryOrder order)
         {
+            this.Store(ref value, order);
+        }
+
+        void IAtomicRef<T>.Store(ref T value, MemoryOrder order)
+        {
             switch (order)
             {
                 case MemoryOrder.Relaxed:
-                    if (ReferenceEquals(_storage, this))
-                        Platform.Write(ref _value, ref value);
+                    Platform.Write(ref _value, ref value);
                     break;
                 case MemoryOrder.Consume:
                     throw new NotSupportedException();
@@ -189,6 +261,16 @@ namespace System.Threading.Atomics
                 default:
                     throw new ArgumentOutOfRangeException("order");
             }
+        }
+
+        /// <summary>
+        /// Sets the underlying value with provided <paramref name="order"/>
+        /// </summary>
+        /// <param name="value">The value to store</param>
+        /// <param name="order">The <see cref="MemoryOrder"/> to achive</param>
+        public void Store(ref T value, MemoryOrder order)
+        {
+            _storage.Store(ref value, order);
         }
 
         /// <summary>
@@ -216,10 +298,6 @@ namespace System.Threading.Atomics
                 case MemoryOrder.AcqRel:
                     return Platform.ReadAcquire(ref _value);
                 case MemoryOrder.SeqCst:
-                    if (PodSize > IntPtr.Size)
-                        lock (_instanceLock)
-                            return Platform.ReadSeqCst(ref _value);
-
                     return Platform.ReadSeqCst(ref _value);
                 default:
                     throw new ArgumentOutOfRangeException("order");
@@ -256,6 +334,15 @@ namespace System.Threading.Atomics
         public static implicit operator Atomic<T>(T value)
         {
             return new Atomic<T>(value);
+        }
+
+        /// <summary>
+        /// Serves as the default hash function
+        /// </summary>
+        /// <returns>A hash code for the current <see cref="Atomic{T}"/></returns>
+        public override int GetHashCode()
+        {
+            return (_instanceLock != null ? _instanceLock.GetHashCode() : _storage.GetHashCode());
         }
 
         /// <summary>
@@ -336,72 +423,48 @@ namespace System.Threading.Atomics
             return !x.Equals(y);
         }
 
-        private class PrimitiveAtomics : IAtomicsOperator<int>,
-            IAtomicsOperator<long>,
-            IAtomicsOperator<double>,
-            IAtomicsOperator<float>,
-            IAtomicsOperator<uint>,
-            IAtomicsOperator<ulong>,
-            IAtomicsOperator<sbyte>,
-            IAtomicsOperator<byte>,
-            IAtomicsOperator<short>,
-            IAtomicsOperator<ushort>
+        private class PrimitiveAtomics : IAtomicOperators<int>,
+            IAtomicOperators<long>,
+            IAtomicOperators<double>,
+            IAtomicOperators<float>,
+            IAtomicOperators<uint>,
+            IAtomicOperators<ulong>,
+            IAtomicOperators<sbyte>,
+            IAtomicOperators<byte>,
+            IAtomicOperators<short>,
+            IAtomicOperators<ushort>
         {
             public bool Supports<TType>() where TType : struct
             {
-                return this as IAtomicsOperator<TType> != null;
+                return this as IAtomicOperators<TType> != null;
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            int IAtomicsOperator<int>.CompareExchange(ref int location1, int value, int comparand)
+            int IAtomicOperators<int>.CompareExchange(ref int location1, int value, int comparand)
             {
                 return Interlocked.CompareExchange(ref location1, value, comparand);
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            int IAtomicsOperator<int>.Read(ref int location1)
-            {
-                return Volatile.Read(ref location1);
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            long IAtomicsOperator<long>.CompareExchange(ref long location1, long value, long comparand)
+            long IAtomicOperators<long>.CompareExchange(ref long location1, long value, long comparand)
             {
                 return Interlocked.CompareExchange(ref location1, value, comparand);
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            long IAtomicsOperator<long>.Read(ref long location1)
-            {
-                return Interlocked.Read(ref location1);
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            double IAtomicsOperator<double>.CompareExchange(ref double location1, double value, double comparand)
+            double IAtomicOperators<double>.CompareExchange(ref double location1, double value, double comparand)
             {
                 return Interlocked.CompareExchange(ref location1, value, comparand);
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            double IAtomicsOperator<double>.Read(ref double location1)
-            {
-                return Volatile.Read(ref location1);
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            float IAtomicsOperator<float>.CompareExchange(ref float location1, float value, float comparand)
+            float IAtomicOperators<float>.CompareExchange(ref float location1, float value, float comparand)
             {
                 return Interlocked.CompareExchange(ref location1, value, comparand);
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            float IAtomicsOperator<float>.Read(ref float location1)
-            {
-                return Volatile.Read(ref location1);
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            unsafe uint IAtomicsOperator<uint>.CompareExchange(ref uint location1, uint value, uint comparand)
+            unsafe uint IAtomicOperators<uint>.CompareExchange(ref uint location1, uint value, uint comparand)
             {
                 fixed (uint* ptr = &location1)
                 {
@@ -411,17 +474,7 @@ namespace System.Threading.Atomics
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            unsafe uint IAtomicsOperator<uint>.Read(ref uint location1)
-            {
-                fixed (uint* ptr = &location1)
-                {
-                    var result = Volatile.Read(ref *(int*)ptr);
-                    return *(uint*)&result;
-                }
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            unsafe ulong IAtomicsOperator<ulong>.CompareExchange(ref ulong location1, ulong value, ulong comparand)
+            unsafe ulong IAtomicOperators<ulong>.CompareExchange(ref ulong location1, ulong value, ulong comparand)
             {
                 fixed (ulong* ptr = &location1)
                 {
@@ -431,81 +484,55 @@ namespace System.Threading.Atomics
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            unsafe ulong IAtomicsOperator<ulong>.Read(ref ulong location1)
+            sbyte IAtomicOperators<sbyte>.CompareExchange(ref sbyte location1, sbyte value, sbyte comparand)
             {
-                fixed (ulong* ptr = &location1)
+                int location = location1;
+                while (true)
                 {
-                    var result = Volatile.Read(ref *(long*)ptr);
-                    return *(ulong*)&result;
+                    
+                    int result = Interlocked.CompareExchange(ref location, value, comparand);
+                    if (result == location) break;
                 }
+                return (sbyte) location;
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            sbyte IAtomicsOperator<sbyte>.CompareExchange(ref sbyte location1, sbyte value, sbyte comparand)
+            byte IAtomicOperators<byte>.CompareExchange(ref byte location1, byte value, byte comparand)
             {
-                sbyte temp = location1;
-                if (temp != comparand)
-                    Volatile.Write(ref location1, value);
+                int location = location1;
+                while (true)
+                {
 
-                Interlocked.MemoryBarrier();
-                return temp;
+                    int result = Interlocked.CompareExchange(ref location, value, comparand);
+                    if (result == location) break;
+                }
+                return (byte)location;
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            sbyte IAtomicsOperator<sbyte>.Read(ref sbyte location1)
+            short IAtomicOperators<short>.CompareExchange(ref short location1, short value, short comparand)
             {
-                return Volatile.Read(ref location1);
+                int location = location1;
+                while (true)
+                {
+
+                    int result = Interlocked.CompareExchange(ref location, value, comparand);
+                    if (result == location) break;
+                }
+                return (short)location;
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            byte IAtomicsOperator<byte>.CompareExchange(ref byte location1, byte value, byte comparand)
+            ushort IAtomicOperators<ushort>.CompareExchange(ref ushort location1, ushort value, ushort comparand)
             {
-                byte temp = location1;
-                if (temp != comparand)
-                    Volatile.Write(ref location1, value);
+                int location = location1;
+                while (true)
+                {
 
-                Interlocked.MemoryBarrier();
-                return temp;
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            byte IAtomicsOperator<byte>.Read(ref byte location1)
-            {
-                return Volatile.Read(ref location1);
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            short IAtomicsOperator<short>.CompareExchange(ref short location1, short value, short comparand)
-            {
-                short temp = location1;
-                if (temp != comparand)
-                    Volatile.Write(ref location1, value);
-
-                Interlocked.MemoryBarrier();
-                return temp;
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            short IAtomicsOperator<short>.Read(ref short location1)
-            {
-                return Volatile.Read(ref location1);
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            ushort IAtomicsOperator<ushort>.CompareExchange(ref ushort location1, ushort value, ushort comparand)
-            {
-                ushort temp = location1;
-                if (temp != comparand)
-                    Volatile.Write(ref location1, value);
-
-                Interlocked.MemoryBarrier();
-                return temp;
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            ushort IAtomicsOperator<ushort>.Read(ref ushort location1)
-            {
-                return Volatile.Read(ref location1);
+                    int result = Interlocked.CompareExchange(ref location, value, comparand);
+                    if (result == location) break;
+                }
+                return (ushort)location;
             }
         }
     }

@@ -61,7 +61,7 @@ namespace System.Threading.Atomics.Tests
                 yield return new object[] { int.MinValue, MemoryOrder.Acquire, true };
                 yield return new object[] { int.MinValue, MemoryOrder.Release, true };
                 yield return new object[] { int.MinValue, MemoryOrder.AcqRel, true };
-                yield return new object[] { int.MinValue, MemoryOrder.SeqCst, false };
+                yield return new object[] { int.MinValue, MemoryOrder.SeqCst, true };
             }
         }
 

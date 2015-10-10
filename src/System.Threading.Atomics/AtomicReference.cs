@@ -8,18 +8,16 @@ namespace System.Threading.Atomics
     /// </summary>
     /// <typeparam name="T">The underlying reference's type</typeparam>
     [DebuggerDisplay("{Value}")]
-#pragma warning disable 0659, 0661
     public sealed class AtomicReference<T> : IEquatable<T>, IEquatable<AtomicReference<T>> where T : class
-#pragma warning restore 0659, 0661
     {
         /*
          * volatile is no-op on x86-64
          * used as _ReadWriteBarrier
          */
-        private volatile MemoryOrder _order;
         private volatile T _value;
-
-        private volatile object _instanceLock;
+        private readonly MemoryOrder _order;
+        
+        private readonly object _instanceLock = new object();
 
         /// <summary>
         /// Creates new instance of <see cref="AtomicLong"/>
@@ -40,9 +38,6 @@ namespace System.Threading.Atomics
         {
             if (!order.IsSpported()) throw new ArgumentException(string.Format("{0} is not supported", order));
 
-            if (order == MemoryOrder.SeqCst)
-                _instanceLock = new object();
-
             _order = order;
             this._value = initialValue;
         }
@@ -54,32 +49,23 @@ namespace System.Threading.Atomics
         {
             get
             {
-                if (_order != MemoryOrder.SeqCst) return Volatile.Read(ref _value);
-
-                lock (_instanceLock)
-                {
-                    return Volatile.Read(ref _value);
-                }
+                return _order != MemoryOrder.SeqCst ? _value : Volatile.Read(ref _value);
             }
             set
             {
                 if (_order == MemoryOrder.SeqCst)
                 {
-                    lock (_instanceLock)
-                    {
-                        Interlocked.Exchange(ref _value, value); // for processors cache coherence
-                    }
+                    Interlocked.Exchange(ref _value, value); // for processors cache coherence
+                    return;
                 }
-                else if (_order.IsAcquireRelease())
+
+                T currentValue;
+                T tempValue;
+                do
                 {
-                    T currentValue;
-                    T tempValue;
-                    do
-                    {
-                        currentValue = _value;
-                        tempValue = value;
-                    } while (_value != currentValue || Interlocked.CompareExchange(ref _value, tempValue, currentValue) != currentValue);
-                }
+                    currentValue = _value;
+                    tempValue = value;
+                } while (_value != currentValue || Interlocked.CompareExchange(ref _value, tempValue, currentValue) != currentValue);
             }
         }
 
@@ -91,18 +77,25 @@ namespace System.Threading.Atomics
         /// <returns>An updated value</returns>
         public T Set(Func<T, T> setter, MemoryOrder order)
         {
+            bool lockTaken = false;
             if (order == MemoryOrder.SeqCst)
+                Monitor.Enter(_instanceLock, ref lockTaken);
+            try
             {
-                lock (_instanceLock)
+                T currentValue;
+                T tempValue;
+                do
                 {
-                    return WriteAcqRel(setter);
-                }
+                    currentValue = _value;
+                    tempValue = setter(currentValue);
+                } while (_value != currentValue || Interlocked.CompareExchange(ref _value, tempValue, currentValue) != currentValue);
+                return currentValue;
             }
-            if (order.IsAcquireRelease())
+            finally
             {
-                return WriteAcqRel(setter);
+                if (lockTaken)
+                    Monitor.Exit(_instanceLock);
             }
-            return null;
         }
 
         /// <summary>
@@ -110,21 +103,126 @@ namespace System.Threading.Atomics
         /// </summary>
         /// <param name="setter">The setter to use</param>
         /// <returns>An updated value</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T Set(Func<T, T> setter)
         {
             return Set(setter, this._order);
         }
 
-        private T WriteAcqRel(Func<T, T> setter)
+        /// <summary>
+        /// Sets atomically current <see cref="Value"/> by provided setter method
+        /// </summary>
+        /// <param name="setter">The setter to use</param>
+        /// <param name="data">Any orbitrary value to be passed to <paramref name="setter"/></param>
+        /// <param name="order">The <see cref="MemoryOrder"/> to achive</param>
+        /// <returns>An updated value</returns>
+        public T Set<TData>(Func<T, TData, T> setter, TData data, MemoryOrder order)
         {
-            T currentValue;
-            T tempValue;
-            do
+            bool lockTaken = false;
+            if (order == MemoryOrder.SeqCst)
+                Monitor.Enter(_instanceLock, ref lockTaken);
+            try
             {
-                currentValue = _value;
-                tempValue = setter(currentValue);
-            } while (_value != currentValue || Interlocked.CompareExchange(ref _value, tempValue, currentValue) != currentValue);
-            return currentValue;
+                T currentValue;
+                T tempValue;
+                do
+                {
+                    currentValue = _value;
+                    tempValue = setter(currentValue, data);
+                } while (_value != currentValue || Interlocked.CompareExchange(ref _value, tempValue, currentValue) != currentValue);
+                return currentValue;
+            }
+            finally
+            {
+                if (lockTaken)
+                    Monitor.Exit(_instanceLock);
+            }
+        }
+
+        /// <summary>
+        /// Sets atomically current <see cref="Value"/> by provided setter method
+        /// </summary>
+        /// <param name="setter">The setter to use</param>
+        /// <param name="data">Any orbitrary value to be passed to <paramref name="setter"/></param>
+        /// <returns>An updated value</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public T Set<TData>(Func<T, TData, T> setter, TData data)
+        {
+            return Set(setter, data, this._order);
+        }
+
+        /// <summary>
+        /// Sets the underlying value with provided <paramref name="order"/>
+        /// </summary>
+        /// <param name="value">The value to store</param>
+        /// <param name="order">The <see cref="MemoryOrder"/> to achive</param>
+        /// <remarks>Providing <see cref="MemoryOrder.Relaxed"/> writes the value as <see cref="MemoryOrder.Acquire"/></remarks>
+        public void Store(T value, MemoryOrder order)
+        {
+            switch (order)
+            {
+                case MemoryOrder.Relaxed:
+                    this._value = value;
+                    break;
+                case MemoryOrder.Consume:
+                    throw new NotSupportedException();
+                case MemoryOrder.Acquire:
+                    throw new InvalidOperationException("Cannot set (store) value with Acquire semantics");
+                case MemoryOrder.Release:
+                case MemoryOrder.AcqRel:
+                    // ARM JIT should emit DMB
+                    this._value = value;
+                    break;
+                case MemoryOrder.SeqCst:
+                    Interlocked.Exchange(ref _value, value);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException("order");
+            }
+        }
+
+        /// <summary>
+        /// Gets the underlying value with provided <paramref name="order"/>
+        /// </summary>
+        /// <param name="order">The <see cref="MemoryOrder"/> to achive</param>
+        /// <returns>The underlying value with provided <paramref name="order"/></returns>
+        /// <remarks>Providing <see cref="MemoryOrder.Relaxed"/> reads the value as <see cref="MemoryOrder.Acquire"/></remarks>
+        public T Load(MemoryOrder order)
+        {
+            switch (order)
+            {
+                case MemoryOrder.Relaxed:
+                    return this._value;
+                case MemoryOrder.Consume:
+                    throw new NotSupportedException();
+                case MemoryOrder.Acquire:
+                    return this._value;
+                case MemoryOrder.Release:
+                    throw new InvalidOperationException("Cannot get (load) value with Release semantics");
+                case MemoryOrder.AcqRel:
+                    return this._value;
+                case MemoryOrder.SeqCst:
+                    return Volatile.Read(ref _value);
+                default:
+                    throw new ArgumentOutOfRangeException("order");
+            }
+        }
+
+        /// <summary>
+        /// Gets value whether the object is lock-free
+        /// </summary>
+        public bool IsLockFree
+        {
+            get { return _order != MemoryOrder.SeqCst; }
+        }
+
+        /// <summary>
+        /// Serves as the default hash function
+        /// </summary>
+        /// <returns>A hash code for the current <see cref="AtomicReference{T}"/></returns>
+        public override int GetHashCode()
+        {
+            return _instanceLock.GetHashCode();
         }
 
         /// <summary>

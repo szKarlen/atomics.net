@@ -10,7 +10,7 @@ namespace System.Threading.Atomics
     /// Specifies how regular, non-atomic memory accesses are to be ordered around an atomic operation
     /// </summary>
     /// <remarks>The Default behavior for <see cref="Atomic{T}"/>, excluding <see cref="AtomicInteger"/>, <see cref="AtomicLong"/>, <see cref="AtomicBoolean"/> and <see cref="AtomicReference{T}"/>, which are using <see cref="AcqRel"/> semantics.</remarks>
-    public enum MemoryOrder
+    public enum MemoryOrder : int
     {
         /// <summary>
         /// Relaxed operation: there are no synchronization or ordering constraints, only atomicity is required of this operation.

@@ -7,21 +7,19 @@ namespace System.Threading.Atomics
     /// An <see cref="long"/> value wrapper with atomic operations
     /// </summary>
     [DebuggerDisplay("{Value}")]
-#pragma warning disable 0659, 0661
-    public sealed class AtomicLong : IAtomic<long>, IEquatable<long>, IEquatable<AtomicLong>
-#pragma warning restore 0659, 0661
+    public sealed class AtomicLong : IAtomicRef<long>, IEquatable<long>, IEquatable<AtomicLong>
     {
-        private volatile MemoryOrder _order;
+        private MemoryOrder _order;
         private readonly BoxedInt64 _storage;
 
-        private volatile object _instanceLock = new object();
+        private readonly object _instanceLock = new object();
 
         /// <summary>
         /// Creates new instance of <see cref="AtomicLong"/>
         /// </summary>
         /// <param name="order">Affects the way store operation occur. Default is <see cref="MemoryOrder.AcqRel"/> semantics</param>
         /// <param name="align">True to store the underlying value aligned, otherwise False</param>
-        public AtomicLong(MemoryOrder order = MemoryOrder.AcqRel, bool align = false)
+        public AtomicLong(MemoryOrder order = MemoryOrder.SeqCst, bool align = false)
             : this(0, order, align)
         {
             
@@ -33,7 +31,7 @@ namespace System.Threading.Atomics
         /// <param name="value">The value to store</param>
         /// <param name="order">Affects the way store operation occur. Load operations are always use <see cref="MemoryOrder.Acquire"/> semantics</param>
         /// <param name="align">True to store the underlying value aligned, otherwise False</param>
-        public AtomicLong(long value, MemoryOrder order = MemoryOrder.AcqRel, bool align = false)
+        public AtomicLong(long value, MemoryOrder order = MemoryOrder.SeqCst, bool align = false)
         {
             if (!order.IsSpported()) throw new ArgumentException(string.Format("{0} is not supported", order));
 
@@ -60,7 +58,7 @@ namespace System.Threading.Atomics
                 [FieldOffset(0)]
                 public new long value;
 
-                [FieldOffset(8)]
+                [FieldOffset(sizeof(long))]
                 private __64BitAlignedValue _alignedValue;
 
                 public AlignedBoxedInt64(long value) : base(value)
@@ -94,32 +92,26 @@ namespace System.Threading.Atomics
         {
             get
             {
-                if (_order != MemoryOrder.SeqCst) return Volatile.Read(ref _storage.value);
+                if (_order != MemoryOrder.SeqCst) return IntPtr.Size == 8 ? _storage.value : Volatile.Read(ref _storage.value);
 
-                lock (_instanceLock)
-                {
-                    return Volatile.Read(ref _storage.value);
-                }
+                return Volatile.Read(ref _storage.value);
             }
             set
             {
                 if (_order == MemoryOrder.SeqCst)
                 {
-                    lock (_instanceLock)
-                    {
-                        Interlocked.Exchange(ref _storage.value, value);
-                    }
+                    Interlocked.Exchange(ref _storage.value, value);
+                    return;
                 }
-                else if (_order.IsAcquireRelease())
+
+                long currentValue;
+                long tempValue;
+                do
                 {
-                    long currentValue;
-                    long tempValue;
-                    do
-                    {
-                        currentValue = _storage.value;
-                        tempValue = value;
-                    } while (_storage.value != currentValue || Interlocked.CompareExchange(ref _storage.value, tempValue, currentValue) != currentValue);
-                }
+                    currentValue = _storage.value;
+                    tempValue = value;
+                } while (_storage.value != currentValue ||
+                         Interlocked.CompareExchange(ref _storage.value, tempValue, currentValue) != currentValue);
             }
         }
 
@@ -141,13 +133,21 @@ namespace System.Threading.Atomics
                     throw new InvalidOperationException("Cannot set (store) value with Acquire semantics");
                 case MemoryOrder.Release:
                 case MemoryOrder.AcqRel:
+#if ARM_CPU || ITANIUM_CPU
+                    Interlocked.MemoryBarrier();
+                    _storage.value = value;
+#else
                     Interlocked.Exchange(ref _storage.value, value);
+#endif
                     break;
                 case MemoryOrder.SeqCst:
-                    lock (_instanceLock)
-                    {
-                        Interlocked.Exchange(ref _storage.value, value);
-                    }
+#if ARM_CPU || ITANIUM_CPU
+                    Interlocked.MemoryBarrier();
+                    _storage.value = value;
+                    Interlocked.MemoryBarrier();
+#else
+                    Interlocked.Exchange(ref _storage.value, value);
+#endif
                     break;
                 default:
                     throw new ArgumentOutOfRangeException("order");
@@ -161,23 +161,24 @@ namespace System.Threading.Atomics
         /// <returns>The underlying value with provided <paramref name="order"/></returns>
         public long Load(MemoryOrder order)
         {
+            if (order == MemoryOrder.Consume)
+                throw new NotSupportedException();
+            if (order == MemoryOrder.Release)
+                throw new InvalidOperationException("Cannot get (load) value with Release semantics");
             switch (order)
             {
                 case MemoryOrder.Relaxed:
                     return _storage.value;
-                case MemoryOrder.Consume:
-                    throw new NotSupportedException();
                 case MemoryOrder.Acquire:
-                    return Volatile.Read(ref _storage.value);
-                case MemoryOrder.Release:
-                    throw new InvalidOperationException("Cannot get (load) value with Release semantics");
                 case MemoryOrder.AcqRel:
-                    return Volatile.Read(ref _storage.value);
                 case MemoryOrder.SeqCst:
-                    lock (_instanceLock)
-                    {
-                        return Volatile.Read(ref _storage.value);
-                    }
+#if ARM_CPU
+                    var tmp = _storage.value;
+                    Interlocked.MemoryBarrier();
+                    return tmp;
+#else
+                    return Volatile.Read(ref _storage.value);
+#endif
                 default:
                     throw new ArgumentOutOfRangeException("order");
             }
@@ -188,7 +189,12 @@ namespace System.Threading.Atomics
         /// </summary>
         public bool IsLockFree
         {
-            get { return _order != MemoryOrder.SeqCst || _order.IsAcquireRelease(); }
+            get { return sizeof(long) <= IntPtr.Size; }
+        }
+
+        void IAtomicRef<long>.Store(ref long value, MemoryOrder order)
+        {
+            Store(value, order);
         }
 
         /// <summary>
@@ -324,6 +330,15 @@ namespace System.Threading.Atomics
         }
 
         /// <summary>
+        /// Serves as the default hash function
+        /// </summary>
+        /// <returns>A hash code for the current <see cref="AtomicLong"/></returns>
+        public override int GetHashCode()
+        {
+            return _instanceLock.GetHashCode();
+        }
+
+        /// <summary>
         /// Returns a value that indicates whether <see cref="AtomicLong"/> and <see cref="long"/> are equal.
         /// </summary>
         /// <param name="x">The first value (<see cref="AtomicLong"/>) to compare.</param>
@@ -384,17 +399,12 @@ namespace System.Threading.Atomics
             set { this.Value = value; }
         }
 
-        long IAtomicsOperator<long>.CompareExchange(ref long location1, long value, long comparand)
+        long IAtomicOperators<long>.CompareExchange(ref long location1, long value, long comparand)
         {
             return Interlocked.CompareExchange(ref location1, value, comparand);
         }
 
-        long IAtomicsOperator<long>.Read(ref long location1)
-        {
-            return Volatile.Read(ref location1);
-        }
-
-        bool IAtomicsOperator<long>.Supports<TType>()
+        bool IAtomicOperators<long>.Supports<TType>()
         {
             return typeof(TType) == typeof(long);
         }

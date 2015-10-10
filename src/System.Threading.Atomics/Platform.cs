@@ -25,11 +25,7 @@ namespace System.Threading.Atomics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T ReadAcquire<T>(ref T location)
         {
-#if ARM_CPU
-            var tmp = location;
-            Interlocked.MemoryBarrier();
-#endif
-            return location;
+            return ReadSeqCst(ref location);
         }
 
         /// <summary>
@@ -41,12 +37,13 @@ namespace System.Threading.Atomics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T ReadSeqCst<T>(ref T location)
         {
-#if ARM_CPU
-            Interlocked.MemoryBarrier();
-#endif
+#if ARM_CPU || ITANIUM_CPU
             var tmp = location;
             Interlocked.MemoryBarrier();
             return tmp;
+#else
+            return location;
+#endif
         }
 
         /// <summary>
@@ -70,8 +67,8 @@ namespace System.Threading.Atomics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteRelease<T>(ref T location, ref T value)
         {
-#if ARM_CPU
-            var tmp = location;
+#if ARM_CPU || ITANIUM_CPU
+            Interlocked.MemoryBarrier();
 #endif
             location = value;
         }
@@ -85,16 +82,11 @@ namespace System.Threading.Atomics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteSeqCst<T>(ref T location, ref T value)
         {
-#if ARM_CPU
-            Interlocked.MemoryBarrier();
-            var tmp = value;
-            Interlocked.MemoryBarrier();
-            location = tmp;
-#else
             Interlocked.MemoryBarrier();
             location = value;
+#if ARM_CPU || ITANIUM_CPU
+            Interlocked.MemoryBarrier();
 #endif
-
         }
     }
 }

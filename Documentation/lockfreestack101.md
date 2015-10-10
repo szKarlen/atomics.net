@@ -1,17 +1,15 @@
 # Lock-free stack 101
 
-This doc aims to provide some examples and ideas of how to implement LIFO, FIFO lock-free stack using atomics.net.
+This doc aims to provide some examples and ideas of how to implement lock-free LIFO container aka stack using atomics.net.
 For more detailed description of terms, please refer to [glossary](glossary.md).
 
 Acquire/Release through CAS approach
 -------
 
-Usually **compare-and-swap (CAS)** is used in lock-free algorithms for locks, interlocked operations implementations, etc., especially `compare_exchange_weak` variation.
+Usually **compare-and-swap (CAS)** is used in lock-free algorithms to maintain thread-safety, while avoiding locks. Especially often the `compare_exchange_weak` variation is used.
 Provided by the .NET Framework [`Interlocked.CompareExchange`](https://msdn.microsoft.com/ru-ru/library/system.threading.interlocked.compareexchange(v=vs.110).aspx) method is the C++ [`compare_and_exchange_strong`](http://en.cppreference.com/w/cpp/atomic/atomic/compare_exchange) analog. The `compare_exchange_weak` is not supported.
 
-Current implementation of atomics.net uses CAS approach for lock-free atomic operations.
-
-So any atomic primitive does use for get/set operations CAS in Acquire/Release mode.
+Current implementation of atomics.net uses CAS approach for lock-free atomic operations (the `Atomic<T>.Value` property uses CAS for setter.
 
 LIFO container aka Stack
 -------
@@ -145,67 +143,79 @@ For now, lets update to atomics.net usage:
 ``` csharp
 public class AtomicStack<T>
 {
-    private AtomicReference<StackNode<T>> m_head = new AtomicReference<StackNode<T>>();
-    private readonly AtomicBoolean _isEmpty = new AtomicBoolean(true);
+    private AtomicReference<StackNode<T>> _head = new AtomicReference<StackNode<T>>();
 
     public void Push(T item)
     {
-        m_head.Set(stackNode =>
+        _head.Set((stackNode, data) =>
         {
-            StackNode<T> node = new StackNode<T>(item);
-            node.m_next = m_head;
+            StackNode<T> node = new StackNode<T>(data);
+            node._next = stackNode;
 
-            IsEmpty = false;
-            
             return node;
-        });
+        }, item);
     }
 
     public T Pop()
     {
         if (IsEmpty)
             throw new InvalidOperationException();
-            
-        return m_head.Set(stackNode =>
-        {
-            IsEmpty = stackNode.m_next == null;
-            return stackNode.m_next;
-        }).m_value;
+
+        return _head.Set(stackNode => stackNode._next)._value;
     }
 
     public bool IsEmpty
     {
-        get { return _isEmpty; }
-        private set { _isEmpty.Value = value; }
+        get { return _head.Load(MemoryOrder.Acquire) == null; }
     }
 
     class StackNode<T>
     {
-        internal T m_value;
-        internal StackNode<T> m_next;
-        internal StackNode(T val) { m_value = val; }
+        internal T _value;
+        internal StackNode<T> _next;
+        internal StackNode(T val) { _value = val; }
     }
 }
 ```
 
-Run stress-test and get equal output.
+Run test and get equal output.
+
+To check the correct implementation try using this stress-test:
+``` csharp
+AtomicStack<int> stack = new AtomicStack<int>();
+
+Parallel.For(0, 100000, stack.Push);
+
+var thread = new Thread(() => Parallel.For(0, 50000, index => stack.Pop()));
+thread.IsBackground = true;
+thread.Start();
+
+int i = 0;
+while (!stack.IsEmpty)
+{
+    stack.Pop();
+    i++;
+}
+
+Console.WriteLine("Pushed: {0};", i); // should print 50000
+```
 
 Final notes
 -------
 
-In last example (i.e. `AtomicStack<T>`) the method Push() may look a little bit confusing
+In last example (i.e. `AtomicStack<T>`) the method `Push()` may look a little bit confusing
 ``` csharp
 public void Push(T item)
 {
-    m_head.Set(stackNode =>
+    _head.Set((stackNode, data) =>
     {
-        StackNode<T> node = new StackNode<T>(item);
-        node.m_next = m_head;
-
-        IsEmpty = false;
+        StackNode<T> node = new StackNode<T>(data);
+        node._next = stackNode;
 
         return node;
-    });
+     }, item);
 }
 ```
-At line 8 (`return node;`) we return the setter value, while at line 3 (`IsEmpty = m_head.Set(stackNode =>`) the return value is the previous value of `AtomicReference<StackNode<T>>.Value`.
+At line 8 (`return node;`) we return the new (i.e. setter) value, `stackNode` argument is the previous value of the `_head` field (`AtomicReference<StackNode<T>>`).
+
+The same logic is for `Pop()` method.

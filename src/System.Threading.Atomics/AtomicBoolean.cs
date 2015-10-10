@@ -6,9 +6,7 @@ namespace System.Threading.Atomics
     /// An <see cref="bool"/> value wrapper with atomic access
     /// </summary>
     [DebuggerDisplay("{Value}")]
-#pragma warning disable 0659, 0661
-    public sealed class AtomicBoolean : IAtomic<bool>, IEquatable<bool>, IEquatable<AtomicBoolean>
-#pragma warning restore 0659, 0661
+    public sealed class AtomicBoolean : IAtomicRef<bool>, IEquatable<bool>, IEquatable<AtomicBoolean>
     {
         private readonly AtomicInteger _storage;
 
@@ -17,7 +15,7 @@ namespace System.Threading.Atomics
         /// </summary>
         /// <param name="order">Affects the way store operation occur. Default is <see cref="MemoryOrder.AcqRel"/> semantics</param>
         /// <param name="align">True to store the underlying value aligned, otherwise False</param>
-        public AtomicBoolean(MemoryOrder order = MemoryOrder.AcqRel, bool align = false)
+        public AtomicBoolean(MemoryOrder order = MemoryOrder.SeqCst, bool align = false)
             : this(false, order, align)
         {
             
@@ -29,7 +27,7 @@ namespace System.Threading.Atomics
         /// <param name="value">The value to store</param>
         /// <param name="order">Affects the way store operation occur. Default is <see cref="MemoryOrder.AcqRel"/> semantics</param>
         /// <param name="align">True to store the underlying value aligned, otherwise False</param>
-        public AtomicBoolean(bool value, MemoryOrder order = MemoryOrder.AcqRel, bool align = false)
+        public AtomicBoolean(bool value, MemoryOrder order = MemoryOrder.SeqCst, bool align = false)
         {
             _storage = new AtomicInteger(value ? 1 : 0, order, align);
         }
@@ -49,6 +47,11 @@ namespace System.Threading.Atomics
         /// <param name="value">The value to store</param>
         /// <param name="order">The <see cref="MemoryOrder"/> to achive</param>
         public void Store(bool value, MemoryOrder order)
+        {
+            _storage.Store(value ? 1 : 0, order);
+        }
+
+        void IAtomicRef<bool>.Store(ref bool value, MemoryOrder order)
         {
             _storage.Store(value ? 1 : 0, order);
         }
@@ -80,18 +83,13 @@ namespace System.Threading.Atomics
             return this.Value ? bool.TrueString : bool.FalseString;
         }
 
-        bool IAtomicsOperator<bool>.CompareExchange(ref bool location1, bool value, bool comparand)
+        bool IAtomicOperators<bool>.CompareExchange(ref bool location1, bool value, bool comparand)
         {
             int intLocation = location1.ToInt32();
             int intValue = value.ToInt32();
             int intComparand = comparand.ToInt32();
 
-            return ((IAtomicsOperator<int>) _storage).CompareExchange(ref intLocation, intValue, intComparand) == 0;
-        }
-
-        bool IAtomicsOperator<bool>.Read(ref bool location1)
-        {
-            return Volatile.Read(ref location1);
+            return ((IAtomicOperators<int>) _storage).CompareExchange(ref intLocation, intValue, intComparand) == 0;
         }
 
         /// <summary>
@@ -137,6 +135,15 @@ namespace System.Threading.Atomics
         }
 
         /// <summary>
+        /// Serves as the default hash function
+        /// </summary>
+        /// <returns>A hash code for the current <see cref="AtomicBoolean"/></returns>
+        public override int GetHashCode()
+        {
+            return _storage.GetHashCode();
+        }
+
+        /// <summary>
         /// Returns a value indicating whether this instance and a specified Object represent the same type and value.
         /// </summary>
         /// <param name="obj">The object to compare with this instance.</param>
@@ -169,7 +176,7 @@ namespace System.Threading.Atomics
             return (!ReferenceEquals(other, null) && (ReferenceEquals(this, other) || this.Value == other.Value));
         }
 
-        bool IAtomicsOperator<bool>.Supports<TType>()
+        bool IAtomicOperators<bool>.Supports<TType>()
         {
             return typeof (TType) == typeof (bool);
         }

@@ -15,18 +15,18 @@ namespace System.Threading.Atomics.Tests
         [Fact]
         public void Atomic_Value_Change_Should_Success()
         {
-            var atomicBoolean = new Atomic<Guid>(SessionValue);
-            Assert.Equal(SessionValue, atomicBoolean.Value);
+            var atomicGuid = new Atomic<Guid>(SessionValue);
+            Assert.Equal(SessionValue, atomicGuid.Value);
 
-            atomicBoolean.Value = SessionNullValue;
-            Assert.Equal(SessionNullValue, atomicBoolean.Value);
+            atomicGuid.Value = SessionNullValue;
+            Assert.Equal(SessionNullValue, atomicGuid.Value);
             
             // same value assignment
-            atomicBoolean.Value = SessionValue;
-            Assert.Equal(SessionValue, atomicBoolean.Value);
-            
-            atomicBoolean.Value = SessionValue;
-            Assert.Equal(SessionValue, atomicBoolean.Value);
+            atomicGuid.Value = SessionValue;
+            Assert.Equal(SessionValue, atomicGuid.Value);
+
+            atomicGuid.Value = SessionValue;
+            Assert.Equal(SessionValue, atomicGuid.Value);
         }
 
         [Fact]
@@ -68,63 +68,63 @@ namespace System.Threading.Atomics.Tests
         [Fact]
         public void Atomic_Implicit_AcqRel_Should_Success()
         {
-            Atomic<Guid> atomicBoolean = SessionValue;
+            Atomic<Guid> atomicGuid = SessionValue;
 
-            Assert.NotNull(atomicBoolean);
-            Assert.Equal(SessionValue, atomicBoolean.Value);
+            Assert.NotNull(atomicGuid);
+            Assert.Equal(SessionValue, atomicGuid.Value);
         }
 
         [Fact]
         public void Atomic_Implicit_Bool_AcqRel_Should_Success()
         {
-            var atomicBoolean = new Atomic<Guid>(SessionValue);
+            var atomicGuid = new Atomic<Guid>(SessionValue);
 
             var func = new Func<Guid, Guid>(i => i);
 
-            Assert.Equal(SessionValue, func(atomicBoolean));
+            Assert.Equal(SessionValue, func(atomicGuid));
         }
 
         [Fact]
         public void Atomic_Equality_AcqRel_Should_Success()
         {
-            var atomicBoolean = new Atomic<Guid>(SessionValue);
+            var atomicGuid = new Atomic<Guid>(SessionValue);
 
-            Assert.True(atomicBoolean == SessionValue);
+            Assert.True(atomicGuid == SessionValue);
         }
 
         [Fact]
         public void Atomic_Inequality_AcqRel_Should_Success()
         {
-            var atomicBoolean = new Atomic<Guid>(SessionNullValue);
+            var atomicGuid = new Atomic<Guid>(SessionNullValue);
 
-            Assert.True(atomicBoolean != SessionValue);
+            Assert.True(atomicGuid != SessionValue);
         }
 
         // Sequential Consistency mode
         [Fact]
         public void Atomic_Implicit_Bool_SeqCst_Should_Success()
         {
-            var atomicBoolean = new Atomic<Guid>(SessionValue, MemoryOrder.SeqCst);
+            var atomicGuid = new Atomic<Guid>(SessionValue, MemoryOrder.SeqCst);
 
             var func = new Func<Guid, Guid>(i => i);
 
-            Assert.Equal(SessionValue, func(atomicBoolean));
+            Assert.Equal(SessionValue, func(atomicGuid));
         }
 
         [Fact]
         public void Atomic_Equality_SeqCst_Should_Success()
         {
-            var atomicBoolean = new Atomic<Guid>(SessionValue, MemoryOrder.SeqCst);
+            var atomicGuid = new Atomic<Guid>(SessionValue, MemoryOrder.SeqCst);
 
-            Assert.True(atomicBoolean == SessionValue);
+            Assert.True(atomicGuid == SessionValue);
         }
 
         [Fact]
         public void Atomic_Inequality_SeqCst_Should_Success()
         {
-            var atomicBoolean = new Atomic<Guid>(SessionNullValue, MemoryOrder.SeqCst);
+            var atomicGuid = new Atomic<Guid>(SessionNullValue, MemoryOrder.SeqCst);
 
-            Assert.True(atomicBoolean != SessionValue);
+            Assert.True(atomicGuid != SessionValue);
         }
 
         /************************/

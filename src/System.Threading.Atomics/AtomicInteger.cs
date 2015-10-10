@@ -7,21 +7,19 @@ namespace System.Threading.Atomics
     /// An <see cref="int"/> value wrapper with atomic operations
     /// </summary>
     [DebuggerDisplay("{Value}")]
-#pragma warning disable 0659, 0661
-    public sealed class AtomicInteger : IAtomic<int>, IEquatable<int>, IEquatable<AtomicInteger>
-#pragma warning restore 0659, 0661
+    public sealed class AtomicInteger : IAtomicRef<int>, IEquatable<int>, IEquatable<AtomicInteger>
     {
-        private volatile MemoryOrder _order; // making volatile to prohibit reordering in constructors
+        private MemoryOrder _order; // making volatile to prohibit reordering in constructors
         private readonly BoxedInt32 _storage;
 
-        private volatile object _instanceLock = new object();
+        private readonly object _instanceLock = new object();
 
         /// <summary>
         /// Creates new instance of <see cref="AtomicInteger"/>
         /// </summary>
         /// <param name="order">Affects the way store operation occur. Default is <see cref="MemoryOrder.AcqRel"/> semantics</param>
         /// <param name="align">True to store the underlying value aligned, otherwise False</param>
-        public AtomicInteger(MemoryOrder order = MemoryOrder.AcqRel, bool align = false)
+        public AtomicInteger(MemoryOrder order = MemoryOrder.SeqCst, bool align = false)
             : this(0, order, align)
         {
             
@@ -33,7 +31,7 @@ namespace System.Threading.Atomics
         /// <param name="value">The value to store</param>
         /// <param name="order">Affects the way store operation occur. Load operations are always use <see cref="MemoryOrder.Acquire"/> semantics</param>
         /// <param name="align">True to store the underlying value aligned, otherwise False</param>
-        public AtomicInteger(int value, MemoryOrder order = MemoryOrder.AcqRel, bool align = false)
+        public AtomicInteger(int value, MemoryOrder order = MemoryOrder.SeqCst, bool align = false)
         {
             if (!order.IsSpported()) throw new ArgumentException(string.Format("{0} is not supported", order));
 
@@ -49,6 +47,9 @@ namespace System.Threading.Atomics
             [FieldOffset(0)]
             public int value;
 
+            [FieldOffset(0)]
+            public volatile int acqRelValue;
+
             private BoxedInt32(int value)
             {
                 this.value = value;
@@ -61,7 +62,7 @@ namespace System.Threading.Atomics
                 [FieldOffset(0)]
                 public new int value;
 
-                [FieldOffset(4)]
+                [FieldOffset(sizeof(int))]
                 private __32BitAlignedValue _alignedValue;
 
                 public AlignedBoxedInt32(int value) : base(value)
@@ -93,34 +94,23 @@ namespace System.Threading.Atomics
         /// <remarks>This method does use CAS approach for value setting. To avoid this use <see cref="Load"/> and <see cref="Store"/> methods pair for get/set operations respectively</remarks>
         public int Value
         {
-            get
-            {
-                if (_order != MemoryOrder.SeqCst) return Volatile.Read(ref _storage.value);
-
-                lock (_instanceLock)
-                {
-                    return Volatile.Read(ref _storage.value);
-                }
-            }
+            get { return Load(_order == MemoryOrder.SeqCst ? MemoryOrder.SeqCst : MemoryOrder.Acquire); }
             set
             {
                 if (_order == MemoryOrder.SeqCst)
                 {
-                    lock (_instanceLock)
-                    {
-                        Interlocked.Exchange(ref _storage.value, value); // for processors cache coherence
-                    }
+                    Interlocked.Exchange(ref _storage.value, value);
+                    return;
                 }
-                else if (_order.IsAcquireRelease())
+
+                int currentValue;
+                int tempValue;
+                do
                 {
-                    int currentValue;
-                    int tempValue;
-                    do
-                    {
-                        currentValue = _storage.value;
-                        tempValue = value;
-                    } while (_storage.value != currentValue || Interlocked.CompareExchange(ref _storage.value, tempValue, currentValue) != currentValue);
-                }
+                    currentValue = _storage.value;
+                    tempValue = value;
+                } while (_storage.value != currentValue ||
+                         Interlocked.CompareExchange(ref _storage.value, tempValue, currentValue) != currentValue);
             }
         }
 
@@ -143,13 +133,15 @@ namespace System.Threading.Atomics
                     throw new InvalidOperationException("Cannot set (store) value with Acquire semantics");
                 case MemoryOrder.Release:
                 case MemoryOrder.AcqRel:
-                    Interlocked.Exchange(ref _storage.value, value);
+                    _storage.acqRelValue = value;
                     break;
                 case MemoryOrder.SeqCst:
-                    lock (_instanceLock)
-                    {
-                        Interlocked.Exchange(ref _storage.value, value);
-                    }
+#if ARM_CPU
+                    Interlocked.MemoryBarrier();
+                     _storage.acqRelValue = value;
+#else
+                    Interlocked.Exchange(ref _storage.value, value);
+#endif
                     break;
                 default:
                     throw new ArgumentOutOfRangeException("order");
@@ -161,7 +153,6 @@ namespace System.Threading.Atomics
         /// </summary>
         /// <param name="order">The <see cref="MemoryOrder"/> to achive</param>
         /// <returns>The underlying value with provided <paramref name="order"/></returns>
-        /// <remarks>Providing <see cref="MemoryOrder.Relaxed"/> reads the value as <see cref="MemoryOrder.Acquire"/></remarks>
         public int Load(MemoryOrder order)
         {
             switch (order)
@@ -171,16 +162,19 @@ namespace System.Threading.Atomics
                 case MemoryOrder.Consume:
                     throw new NotSupportedException();
                 case MemoryOrder.Acquire:
-                    return Volatile.Read(ref _storage.value);
+                    return _storage.acqRelValue;
                 case MemoryOrder.Release:
                     throw new InvalidOperationException("Cannot get (load) value with Release semantics");
                 case MemoryOrder.AcqRel:
-                    return Volatile.Read(ref _storage.value);
+                    return _storage.acqRelValue;
                 case MemoryOrder.SeqCst:
-                    lock (_instanceLock)
-                    {
-                        return Volatile.Read(ref _storage.value);
-                    }
+#if ARM_CPU
+                    var tmp = _storage.acqRelValue;
+                    Interlocked.MemoryBarrier();
+                    return tmp;
+#else
+                    return _storage.acqRelValue;
+#endif
                 default:
                     throw new ArgumentOutOfRangeException("order");
             }
@@ -191,7 +185,12 @@ namespace System.Threading.Atomics
         /// </summary>
         public bool IsLockFree
         {
-            get { return _order != MemoryOrder.SeqCst || _order.IsAcquireRelease(); }
+            get { return true; }
+        }
+
+        void IAtomicRef<int>.Store(ref int value, MemoryOrder order)
+        {
+            Store(value, order);
         }
 
         /// <summary>
@@ -328,6 +327,15 @@ namespace System.Threading.Atomics
         }
 
         /// <summary>
+        /// Serves as the default hash function
+        /// </summary>
+        /// <returns>A hash code for the current <see cref="AtomicInteger"/></returns>
+        public override int GetHashCode()
+        {
+            return _instanceLock.GetHashCode();
+        }
+
+        /// <summary>
         /// Returns a value that indicates whether <see cref="AtomicInteger"/> and <see cref="int"/> are equal.
         /// </summary>
         /// <param name="x">The first value (<see cref="AtomicInteger"/>) to compare.</param>
@@ -388,17 +396,12 @@ namespace System.Threading.Atomics
             set { this.Value = value; }
         }
 
-        int IAtomicsOperator<int>.CompareExchange(ref int location1, int value, int comparand)
+        int IAtomicOperators<int>.CompareExchange(ref int location1, int value, int comparand)
         {
             return Interlocked.CompareExchange(ref location1, value, comparand);
         }
 
-        int IAtomicsOperator<int>.Read(ref int location1)
-        {
-            return Volatile.Read(ref location1);
-        }
-        
-        bool IAtomicsOperator<int>.Supports<TType>()
+        bool IAtomicOperators<int>.Supports<TType>()
         {
             return typeof (TType) == typeof (int);
         }

@@ -61,7 +61,7 @@ namespace System.Threading.Atomics.Tests
                 yield return new object[] { false, MemoryOrder.Acquire, true };
                 yield return new object[] { false, MemoryOrder.Release, true };
                 yield return new object[] { false, MemoryOrder.AcqRel, true };
-                yield return new object[] { false, MemoryOrder.SeqCst, false };
+                yield return new object[] { false, MemoryOrder.SeqCst, true };
             }
         }
 
