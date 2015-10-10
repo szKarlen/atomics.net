@@ -189,7 +189,7 @@ namespace System.Threading.Atomics
         /// </summary>
         public bool IsLockFree
         {
-            get { return sizeof(long) <= IntPtr.Size; }
+            get { return true; }
         }
 
         void IAtomicRef<long>.Store(ref long value, MemoryOrder order)
