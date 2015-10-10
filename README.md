@@ -85,23 +85,7 @@ Notes for usage
 
 `Atomic<T>` with `Int32`, `Int64` and `Boolean` specialization falls back to using `AtomicInteger`, `AtomicLong` and `AtomicBoolean` as internal storage respectively.
 
-The memory order flag as well as alignment trasfer to internal storage.
-
-Consider the following:
-
-``` csharp
-var atomicBool = new Atomic<bool>(false);
-// is equal to
-var atomicBoolSeqCst = new AtomicBoolean(false, MemoryOrder.SeqCst);
-```
-and
-``` csharp
-var atomicBoolAcqRel = new Atomic<bool>(false, MemoryOrder.AcqRel);
-// is equal to
-var atomicBool = new AtomicBoolean(false);
-```
-
-The above example applies to `Atomic<int>` with `AtomicInteger`, and `Atomic<long>` with `AtomicLong`.
+The memory order flag as well as alignment trasfers to internal storage.
 
 Lock-free stack 101
 -------
