@@ -73,7 +73,7 @@ namespace System.Threading.Atomics
         /// Sets atomically current <see cref="Value"/> by provided setter method
         /// </summary>
         /// <param name="setter">The setter to use</param>
-        /// <param name="order">The <see cref="MemoryOrder"/> to achive</param>
+        /// <param name="order">The <see cref="MemoryOrder"/> to achieve</param>
         /// <returns>An updated value</returns>
         public T Set(Func<T, T> setter, MemoryOrder order)
         {

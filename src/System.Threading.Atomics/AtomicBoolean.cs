@@ -45,7 +45,7 @@ namespace System.Threading.Atomics
         /// Sets the underlying value with provided <paramref name="order"/>
         /// </summary>
         /// <param name="value">The value to store</param>
-        /// <param name="order">The <see cref="MemoryOrder"/> to achive</param>
+        /// <param name="order">The <see cref="MemoryOrder"/> to achieve</param>
         public void Store(bool value, MemoryOrder order)
         {
             _storage.Store(value ? 1 : 0, order);
@@ -59,7 +59,7 @@ namespace System.Threading.Atomics
         /// <summary>
         /// Gets the underlying value with provided <paramref name="order"/>
         /// </summary>
-        /// <param name="order">The <see cref="MemoryOrder"/> to achive</param>
+        /// <param name="order">The <see cref="MemoryOrder"/> to achieve</param>
         /// <returns>The underlying value with provided <paramref name="order"/></returns>
         public bool Load(MemoryOrder order)
         {
