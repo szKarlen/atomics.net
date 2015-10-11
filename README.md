@@ -94,11 +94,11 @@ It is very straightforward to implement lock-free stack:
 ``` csharp
 public class AtomicStack<T>
 {
-    private AtomicReference<StackNode<T>> _head = new AtomicReference<StackNode<T>>();
+    private AtomicReference<StackNode<T>> _headNode = new AtomicReference<StackNode<T>>();
 
     public void Push(T item)
     {
-        _head.Set((stackNode, data) =>
+        _headNode.Set((stackNode, data) =>
         {
             StackNode<T> node = new StackNode<T>(data);
             node._next = stackNode;
@@ -112,12 +112,12 @@ public class AtomicStack<T>
         if (IsEmpty)
             throw new InvalidOperationException();
 
-        return _head.Set(stackNode => stackNode._next)._value;
+        return _headNode.Set(stackNode => stackNode._next)._value;
     }
 
     public bool IsEmpty
     {
-        get { return _head.Load(MemoryOrder.Acquire) == null; }
+        get { return _headNode.Load(MemoryOrder.Acquire) == null; }
     }
 
     class StackNode<T>
@@ -157,6 +157,32 @@ Usually **compare-and-swap (CAS)** is used in lock-free algorithms to maintain t
 Provided by the .NET Framework [`Interlocked.CompareExchange`](https://msdn.microsoft.com/ru-ru/library/system.threading.interlocked.compareexchange(v=vs.110).aspx) method is the C++ [`compare_and_exchange_strong`](http://en.cppreference.com/w/cpp/atomic/atomic/compare_exchange) analog. The `compare_exchange_weak` is not supported.
 
 Current implementation of atomics.net uses CAS approach for lock-free atomic operations (the `Atomic<T>.Value` property uses CAS for setter.
+
+Changelog
+-------
+* RC3:
+  - New `AtomicReference<T>.Set<TData>(Func<T, TData, T>setter, TData data)` method overload
+  - New byref `Store(ref T value, MemoryOrder order)` method for `Atomic<T>`, `AtomicInteger`, `AtomicLong` and `AtomicBoolean`
+  - Optimization of Acquire/Release and Seq_Cst read/writes performance on x86
+  - ITANIUM_CPU conditional compiltion support
+* RC2:
+  - `align` flag support in `Atomic<T>`, `AtomicInteger`, `AtomicLong` and `AtomicBoolean` for false sharing prevention alongside of CPU's cache lines
+  - Bug fixes in CAS loops
+  - ARM_CPU conditional compilation support
+* RC1:
+  - `AtomicReference<T>.Set()` method fix for CAS
+  - C++ 11 atomic Load/Store methods as well as IsLockFree property support in primitives
+  - Docs and samples update
+* Beta2:
+  - Lock-free stack samples
+  - NuGet package support
+  - Fixes
+* Beta1:
+  - Thread interruption fixes in AtomicInteger, AtomicLong
+  - Docs update
+* Alpha:
+  - Initial milestone of project
+  
 
 Contributing
 -------

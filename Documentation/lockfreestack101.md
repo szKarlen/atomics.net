@@ -143,11 +143,11 @@ For now, lets update to atomics.net usage:
 ``` csharp
 public class AtomicStack<T>
 {
-    private AtomicReference<StackNode<T>> _head = new AtomicReference<StackNode<T>>();
+    private AtomicReference<StackNode<T>> _headNode = new AtomicReference<StackNode<T>>();
 
     public void Push(T item)
     {
-        _head.Set((stackNode, data) =>
+        _headNode.Set((stackNode, data) =>
         {
             StackNode<T> node = new StackNode<T>(data);
             node._next = stackNode;
@@ -161,12 +161,12 @@ public class AtomicStack<T>
         if (IsEmpty)
             throw new InvalidOperationException();
 
-        return _head.Set(stackNode => stackNode._next)._value;
+        return _headNode.Set(stackNode => stackNode._next)._value;
     }
 
     public bool IsEmpty
     {
-        get { return _head.Load(MemoryOrder.Acquire) == null; }
+        get { return _headNode.Load(MemoryOrder.Acquire) == null; }
     }
 
     class StackNode<T>
