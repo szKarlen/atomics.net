@@ -267,7 +267,7 @@ namespace System.Threading.Atomics
         /// Sets the underlying value with provided <paramref name="order"/>
         /// </summary>
         /// <param name="value">The value to store</param>
-        /// <param name="order">The <see cref="MemoryOrder"/> to achive</param>
+        /// <param name="order">The <see cref="MemoryOrder"/> to achieve</param>
         public void Store(ref T value, MemoryOrder order)
         {
             _storage.Store(ref value, order);
@@ -277,7 +277,7 @@ namespace System.Threading.Atomics
         /// Sets the underlying value with provided <paramref name="order"/>
         /// </summary>
         /// <param name="value">The value to store</param>
-        /// <param name="order">The <see cref="MemoryOrder"/> to achive</param>
+        /// <param name="order">The <see cref="MemoryOrder"/> to achieve</param>
         public void Store(T value, MemoryOrder order)
         {
             _storage.Store(value, order);
@@ -307,7 +307,7 @@ namespace System.Threading.Atomics
         /// <summary>
         /// Gets the underlying value with provided <paramref name="order"/>
         /// </summary>
-        /// <param name="order">The <see cref="MemoryOrder"/> to achive</param>
+        /// <param name="order">The <see cref="MemoryOrder"/> to achieve</param>
         /// <returns>The underlying value with provided <paramref name="order"/></returns>
         public T Load(MemoryOrder order)
         {

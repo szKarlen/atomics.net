@@ -5,7 +5,7 @@ namespace System.Threading.Atomics
     public static class Platform
     {
         /// <summary>
-        /// Reads value from provided <paramref name="location"/> without any syncronization
+        /// Reads value from provided <paramref name="location"/> without any synchronization
         /// </summary>
         /// <typeparam name="T">The reference (<paramref name="location"/>) type</typeparam>
         /// <param name="location">The location to read</param>
@@ -29,7 +29,7 @@ namespace System.Threading.Atomics
         }
 
         /// <summary>
-        /// Reads value from provided <paramref name="location"/> with sequitial consistent semnatics
+        /// Reads value from provided <paramref name="location"/> with sequential consistent semantics
         /// </summary>
         /// <typeparam name="T">The reference (<paramref name="location"/>) type</typeparam>
         /// <param name="location">The location to read</param>
@@ -74,7 +74,7 @@ namespace System.Threading.Atomics
         }
 
         /// <summary>
-        /// Writes <paramref name="value"/> to provided <paramref name="location"/> with sequitial consistent semnatics
+        /// Writes <paramref name="value"/> to provided <paramref name="location"/> with sequential consistent semantics
         /// </summary>
         /// <typeparam name="T">The reference (<paramref name="location"/>) type</typeparam>
         /// <param name="location">The location to store the <paramref name="value"/></param>

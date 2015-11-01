@@ -113,8 +113,8 @@ namespace System.Threading.Atomics
         /// Sets atomically current <see cref="Value"/> by provided setter method
         /// </summary>
         /// <param name="setter">The setter to use</param>
-        /// <param name="data">Any orbitrary value to be passed to <paramref name="setter"/></param>
-        /// <param name="order">The <see cref="MemoryOrder"/> to achive</param>
+        /// <param name="data">Any arbitrary value to be passed to <paramref name="setter"/></param>
+        /// <param name="order">The <see cref="MemoryOrder"/> to achieve</param>
         /// <returns>An updated value</returns>
         public T Set<TData>(Func<T, TData, T> setter, TData data, MemoryOrder order)
         {
@@ -143,7 +143,7 @@ namespace System.Threading.Atomics
         /// Sets atomically current <see cref="Value"/> by provided setter method
         /// </summary>
         /// <param name="setter">The setter to use</param>
-        /// <param name="data">Any orbitrary value to be passed to <paramref name="setter"/></param>
+        /// <param name="data">Any arbitrary value to be passed to <paramref name="setter"/></param>
         /// <returns>An updated value</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T Set<TData>(Func<T, TData, T> setter, TData data)
@@ -155,7 +155,7 @@ namespace System.Threading.Atomics
         /// Sets the underlying value with provided <paramref name="order"/>
         /// </summary>
         /// <param name="value">The value to store</param>
-        /// <param name="order">The <see cref="MemoryOrder"/> to achive</param>
+        /// <param name="order">The <see cref="MemoryOrder"/> to achieve</param>
         /// <remarks>Providing <see cref="MemoryOrder.Relaxed"/> writes the value as <see cref="MemoryOrder.Acquire"/></remarks>
         public void Store(T value, MemoryOrder order)
         {
@@ -184,7 +184,7 @@ namespace System.Threading.Atomics
         /// <summary>
         /// Gets the underlying value with provided <paramref name="order"/>
         /// </summary>
-        /// <param name="order">The <see cref="MemoryOrder"/> to achive</param>
+        /// <param name="order">The <see cref="MemoryOrder"/> to achieve</param>
         /// <returns>The underlying value with provided <paramref name="order"/></returns>
         /// <remarks>Providing <see cref="MemoryOrder.Relaxed"/> reads the value as <see cref="MemoryOrder.Acquire"/></remarks>
         public T Load(MemoryOrder order)
