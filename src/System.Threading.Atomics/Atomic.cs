@@ -163,8 +163,8 @@ namespace System.Threading.Atomics
                 || podType == typeof(char)
                 || podType == typeof(byte)
                 || podType == typeof(sbyte)
-                || podType == typeof(Int16)
-                || podType == typeof(UInt16)
+                || podType == typeof(short)
+                || podType == typeof(ushort)
                 || podType == typeof(int)
                 || podType == typeof(uint)
                 || podType == typeof(float)
@@ -486,53 +486,65 @@ namespace System.Threading.Atomics
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             sbyte IAtomicOperators<sbyte>.CompareExchange(ref sbyte location1, sbyte value, sbyte comparand)
             {
-                int location = location1;
                 while (true)
                 {
-                    
+                    sbyte temp = location1;
+                    int location = temp;
                     int result = Interlocked.CompareExchange(ref location, value, comparand);
-                    if (result == location) break;
+                    if (result == location1)
+                    {
+                        location1 = value;
+                        return temp;
+                    }
                 }
-                return (sbyte) location;
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             byte IAtomicOperators<byte>.CompareExchange(ref byte location1, byte value, byte comparand)
             {
-                int location = location1;
                 while (true)
                 {
-
+                    byte temp = location1;
+                    int location = temp;
                     int result = Interlocked.CompareExchange(ref location, value, comparand);
-                    if (result == location) break;
+                    if (result == location1)
+                    {
+                        location1 = value;
+                        return temp;
+                    }
                 }
-                return (byte)location;
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             short IAtomicOperators<short>.CompareExchange(ref short location1, short value, short comparand)
             {
-                int location = location1;
                 while (true)
                 {
-
+                    short temp = location1;
+                    int location = temp;
                     int result = Interlocked.CompareExchange(ref location, value, comparand);
-                    if (result == location) break;
+                    if (result == location1)
+                    {
+                        location1 = value;
+                        return temp;
+                    }
                 }
-                return (short)location;
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             ushort IAtomicOperators<ushort>.CompareExchange(ref ushort location1, ushort value, ushort comparand)
             {
-                int location = location1;
                 while (true)
                 {
-
+                    ushort temp = location1;
+                    int location = temp;
                     int result = Interlocked.CompareExchange(ref location, value, comparand);
-                    if (result == location) break;
+                    if (result == location1)
+                    {
+                        location1 = value;
+                        return temp;
+                    }
                 }
-                return (ushort)location;
             }
         }
     }
