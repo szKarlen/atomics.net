@@ -8,11 +8,11 @@
 
 **Itanium** - a family of 64-bit Intel microprocessors that implement the Intel Itanium architecture (formerly called IA-64). Intel markets the processors for enterprise servers and high-performance computing systems. The Itanium architecture originated at Hewlett-Packard (HP), and was later jointly developed by HP and Intel.
 
-**ECMA CLI Memory Model** - Section 12.6 of Partition I of the ECMA CLI specification, which explains explains the alignment rules, byte ordering, the atomicity of loads and stores, volatile semantics, locking behavior, etc.
+**ECMA CLI Memory Model** - Section 12.6 of Partition I of the ECMA CLI specification, which explains the alignment rules, byte ordering, the atomicity of loads and stores, volatile semantics, locking behavior, etc.
 
 **CLR** - implementation of the Virtual Execution System (VES) as defined in the ECMA Common Language Infrastructure (CLI) standard.
 
-**CLI** - an open specification developed by Microsoft and standardized by ISO[1] and ECMA[2] that describes the executable code and runtime environment. The specification defines an environment that allows multiple high-level languages to be used on different computer platforms without being rewritten for specific architectures. The .NET Framework os an implementations of the CLI.
+**CLI** - an open specification developed by Microsoft and standardized by ISO[1] and ECMA[2] that describes the executable code and runtime environment. The specification defines an environment that allows multiple high-level languages to be used on different computer platforms without being rewritten for specific architectures.
 
 **Fence** - is a type of barrier instruction that causes a central processing unit (CPU) or compiler to enforce an ordering constraint on memory operations issued before and after the barrier instruction.
 

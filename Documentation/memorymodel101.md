@@ -12,16 +12,16 @@ Although the library is a PCL itself, the minimum required version of .NET - 4.5
 
 For ECMA MM implementations of CLI on ARM architecture the conditional compilation is supported by using ARM_CPU directive.
 
-The default memory semantics for the library's primitives (like `Atomic<T>`, etc.) is `MemoryOrder.SeqCst`, whereas `AtomicReference<T>` uses `MemoryOrder.AcqRel`, which fits very well with CAS approach and CLR 2.0 memeory model.
+The default memory semantics for the library's primitives (like `Atomic<T>`, etc.) is `MemoryOrder.SeqCst`, whereas `AtomicReference<T>` uses `MemoryOrder.AcqRel`, which fits very well with CAS approach and CLR 2.0 memory model.
 
 The option for sequential consistency (i.e. `SeqCst`) is implemented by using intrinsic functions (with compilation to proper CPU instruction) or a combination of Acquire/Release with sequential order emulation through exclusion locks, when atomic read/writes to particular POD are not supported by HW.
 
-Specifing Acquire only or Release only flag falls back to full Acquire/Release semantics for get/set operations or combinations of.
+Specifying Acquire only or Release only flag falls back to full Acquire/Release semantics for get/set operations or combinations of.
 
 x86-x64 memory model vs ECMA
 -------
 
-Starting from CLR 2.0 the memory model had become more stricter than ECMA CLI Memory Model standard defines and very close to x86 behaviour.
+Starting from CLR 2.0 the memory model had become more stricter than ECMA CLI Memory Model standard defines and very close to x86 behavior.
 
 The main changes are (notes are taken from this [article](http://msdn.microsoft.com/msdnmag/issues/05/10/MemoryModels/) by Vance Morrison):
 
@@ -32,7 +32,7 @@ The main changes are (notes are taken from this [article](http://msdn.microsoft.
 * (x86) A write cannot move past a read from the same thread to the same location.
 * (x86) A read can only move by going later in time to stay after a write to keep from breaking rule 3 as that write moves later in time.
 
-Summarizing the info above we are dealing with the follwoing rules (taken from this [article](http://joeduffyblog.com/2007/11/10/clr-20-memory-model/) by Joe Duffy):
+Summarizing the info above we are dealing with the following rules (taken from this [article](http://joeduffyblog.com/2007/11/10/clr-20-memory-model/) by Joe Duffy):
 
 1. Data dependence among loads and stores is never violated.
 2. All stores have release semantics, i.e. no load or store may move after one.
@@ -61,10 +61,10 @@ One interesting piece of trivia is that the **C# volatile semantics closely matc
 
 As we saw above the CLR 2.0 memory model is very close to x86 systems. Among other popular (or some kind of) platforms are Itanium and ARM.
 
-Starting from .NET 4.5 support for Itanium was [droppped](https://msdn.microsoft.com/en-us/library/8z6watww.aspx).
+Starting from .NET 4.5 support for Itanium was [dropped](https://msdn.microsoft.com/en-us/library/8z6watww.aspx).
 
 This means that there is no need for additional explicit barrier/fences to be used for processor cache coherence support. X86-64 do this by design.
 
-The only situation about acquire/release semantics for .NET was the following [behaviour](#itanium): **_CLR JIT on Itanium does emit ST.REL for non-volatile writes_**, because Itanium distinguishes between an ordinary load (LD) and load-acquire (LD.ACQ), and an ordinary store (ST) and store-release (ST.REL) ([source](https://msdn.microsoft.com/en-us/magazine/jj883956.aspx)).
+The only situation about acquire/release semantics for .NET was the following [behavior](#itanium): **_CLR JIT on Itanium does emit ST.REL for non-volatile writes_**, because Itanium distinguishes between an ordinary load (LD) and load-acquire (LD.ACQ), and an ordinary store (ST) and store-release (ST.REL) ([source](https://msdn.microsoft.com/en-us/magazine/jj883956.aspx)).
 
-This means, that all writes are volatile, while reads - not and requires to use memeory barrier for acquire.
+This means, that all writes are volatile, while reads - not and requires to use memory barrier for acquire.

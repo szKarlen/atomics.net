@@ -13,11 +13,11 @@ Although the library is a PCL itself, the minimum required version of .NET - 4.5
 
 For ECMA MM implementations of CLI on ARM architecture the conditional compilation is supported by using ARM_CPU directive.
 
-The default memory semantics for the library's primitives (like `Atomic<T>`, etc.) is `MemoryOrder.SeqCst`, whereas `AtomicReference<T>` uses `MemoryOrder.AcqRel`, which fits very well with CAS approach and CLR 2.0 memeory model.
+The default memory semantics for the library's primitives (like `Atomic<T>`, etc.) is `MemoryOrder.SeqCst`, whereas `AtomicReference<T>` uses `MemoryOrder.AcqRel`, which fits very well with CAS approach and CLR 2.0 memory model.
 
 The option for sequential consistency (i.e. `SeqCst`) is implemented by using intrinsic functions (with compilation to proper CPU instruction) or a combination of Acquire/Release with sequential order emulation through exclusion locks, when atomic read/writes to particular POD are not supported by HW.
 
-Specifing Acquire only or Release only flag falls back to full Acquire/Release semantics for get/set operations or combinations of.
+Specifying Acquire only or Release only flag falls back to full Acquire/Release semantics for get/set operations or combinations of.
 
 Atomic primitives
 -------
@@ -85,7 +85,7 @@ Notes for usage
 
 `Atomic<T>` with `Int32`, `Int64` and `Boolean` specialization falls back to using `AtomicInteger`, `AtomicLong` and `AtomicBoolean` as internal storage respectively.
 
-The memory order flag as well as alignment trasfers to internal storage.
+The memory order flag as well as alignment transfers to internal storage.
 
 Lock-free stack 101
 -------
@@ -164,7 +164,7 @@ Changelog
   - New `AtomicReference<T>.Set<TData>(Func<T, TData, T>setter, TData data)` method overload
   - New byref `Store(ref T value, MemoryOrder order)` method for `Atomic<T>`, `AtomicInteger`, `AtomicLong` and `AtomicBoolean`
   - Optimization of Acquire/Release and Seq_Cst read/writes performance on x86
-  - ITANIUM_CPU conditional compiltion support
+  - ITANIUM_CPU conditional compilation support
 * RC2:
   - `align` flag support in `Atomic<T>`, `AtomicInteger`, `AtomicLong` and `AtomicBoolean` for false sharing prevention alongside of CPU's cache lines
   - Bug fixes in CAS loops
@@ -178,7 +178,7 @@ Changelog
   - NuGet package support
   - Fixes
 * Beta1:
-  - Thread interruption fixes in AtomicInteger, AtomicLong
+  - Thread interruption support in AtomicInteger, AtomicLong
   - Docs update
 * Alpha:
   - Initial milestone of project

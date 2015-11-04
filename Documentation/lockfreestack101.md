@@ -14,7 +14,7 @@ Current implementation of atomics.net uses CAS approach for lock-free atomic ope
 LIFO container aka Stack
 -------
 
-As an initial example of a lock-free stack implementation lets look at the followig example (borrowed from [Joe Duffy
+As an initial example of a lock-free stack implementation lets look at the following example (borrowed from [Joe Duffy
 ](http://msdn.microsoft.com/msdnmag/issues/07/05/CLRInsideOut/default.aspx) article at MSDN Magazine from May 2007):
 ``` csharp
 public class LockFreeStack<T> {
