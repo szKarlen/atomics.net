@@ -1,4 +1,7 @@
 using System.Runtime.CompilerServices;
+#if NET40
+using Interlocked = System.Threading.Thread;
+#endif
 
 namespace System.Threading.Atomics
 {
@@ -39,7 +42,7 @@ namespace System.Threading.Atomics
         {
 #if ARM_CPU || ITANIUM_CPU
             var tmp = location;
-            Interlocked.MemoryBarrier();
+            MemoryBarrier();
             return tmp;
 #else
             return location;
@@ -68,7 +71,7 @@ namespace System.Threading.Atomics
         public static void WriteRelease<T>(ref T location, ref T value)
         {
 #if ARM_CPU || ITANIUM_CPU
-            Interlocked.MemoryBarrier();
+            MemoryBarrier();
 #endif
             location = value;
         }
@@ -82,9 +85,19 @@ namespace System.Threading.Atomics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteSeqCst<T>(ref T location, ref T value)
         {
-            Interlocked.MemoryBarrier();
+            MemoryBarrier();
             location = value;
 #if ARM_CPU || ITANIUM_CPU
+            MemoryBarrier();
+#endif
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void MemoryBarrier()
+        {
+#if NET40
+            Thread.MemoryBarrier();
+#else
             Interlocked.MemoryBarrier();
 #endif
         }

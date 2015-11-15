@@ -209,11 +209,11 @@ namespace System.Threading.Atomics
             T temp = location1;
             if (!temp.Equals(comparand))
             {
-                Interlocked.MemoryBarrier();
+                Platform.MemoryBarrier();
                 location1 = value;
             }
 
-            Interlocked.MemoryBarrier();
+            Platform.MemoryBarrier();
             return temp;
         }
 

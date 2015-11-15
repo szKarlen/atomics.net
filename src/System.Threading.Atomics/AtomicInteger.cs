@@ -137,7 +137,7 @@ namespace System.Threading.Atomics
                     break;
                 case MemoryOrder.SeqCst:
 #if ARM_CPU
-                    Interlocked.MemoryBarrier();
+                   Platform.MemoryBarrier();
                      _storage.acqRelValue = value;
 #else
                     Interlocked.Exchange(ref _storage.value, value);
@@ -170,7 +170,7 @@ namespace System.Threading.Atomics
                 case MemoryOrder.SeqCst:
 #if ARM_CPU
                     var tmp = _storage.acqRelValue;
-                    Interlocked.MemoryBarrier();
+                    Platform.MemoryBarrier();
                     return tmp;
 #else
                     return _storage.acqRelValue;

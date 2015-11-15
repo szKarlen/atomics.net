@@ -134,7 +134,7 @@ namespace System.Threading.Atomics
                 case MemoryOrder.Release:
                 case MemoryOrder.AcqRel:
 #if ARM_CPU || ITANIUM_CPU
-                    Interlocked.MemoryBarrier();
+                    Platform.MemoryBarrier();
                     _storage.value = value;
 #else
                     Interlocked.Exchange(ref _storage.value, value);
@@ -142,9 +142,9 @@ namespace System.Threading.Atomics
                     break;
                 case MemoryOrder.SeqCst:
 #if ARM_CPU || ITANIUM_CPU
-                    Interlocked.MemoryBarrier();
+                    Platform.MemoryBarrier();
                     _storage.value = value;
-                    Interlocked.MemoryBarrier();
+                    Platform.MemoryBarrier();
 #else
                     Interlocked.Exchange(ref _storage.value, value);
 #endif
@@ -174,7 +174,7 @@ namespace System.Threading.Atomics
                 case MemoryOrder.SeqCst:
 #if ARM_CPU
                     var tmp = _storage.value;
-                    Interlocked.MemoryBarrier();
+                    Platform.MemoryBarrier();
                     return tmp;
 #else
                     return Volatile.Read(ref _storage.value);
