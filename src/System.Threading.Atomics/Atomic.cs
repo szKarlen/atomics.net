@@ -98,7 +98,7 @@ namespace System.Threading.Atomics
                 _atomic = atomic;
             }
 
-            public T CompareExchange(ref T location1, T value, T comparand)
+            T IAtomicOperators<T>.CompareExchange(ref T location1, T value, T comparand)
             {
                 lock (_atomic._instanceLock)
                 {
@@ -106,7 +106,7 @@ namespace System.Threading.Atomics
                 }
             }
 
-            public bool Supports<TType>() where TType : struct
+            bool IAtomicOperators<T>.Supports<TType>()
             {
                 return true;
             }
@@ -154,6 +154,11 @@ namespace System.Threading.Atomics
             }
 
             public bool IsLockFree { get { return false; } }
+
+            public T CompareExchange(T value, T comparand)
+            {
+                return ((IAtomicOperators<T>) this).CompareExchange(ref _atomic._value, value, comparand);
+            }
         }
 
         private static bool AtomicRWSupported()
@@ -233,6 +238,17 @@ namespace System.Threading.Atomics
                     return AtomicRWSupported() || PodSize <= IntPtr.Size;
                 return _storage.IsLockFree;
             }
+        }
+
+        /// <summary>
+        /// Atomically compares underlying value with <paramref name="comparand"/> for equality and, if they are equal, replaces the first value.
+        /// </summary>
+        /// <param name="value">The value that replaces the underlying value if the comparison results in equality</param>
+        /// <param name="comparand">The value that is compared to the underlying value.</param>
+        /// <returns>The original underlying value</returns>
+        public T CompareExchange(T value, T comparand)
+        {
+            return this._storage.CompareExchange(value, comparand);
         }
 
         void IAtomic<T>.Store(T value, MemoryOrder order)

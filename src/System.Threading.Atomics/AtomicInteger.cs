@@ -188,6 +188,17 @@ namespace System.Threading.Atomics
             get { return true; }
         }
 
+        /// <summary>
+        /// Atomically compares underlying value with <paramref name="comparand"/> for equality and, if they are equal, replaces the first value.
+        /// </summary>
+        /// <param name="value">The value that replaces the underlying value if the comparison results in equality</param>
+        /// <param name="comparand">The value that is compared to the underlying value.</param>
+        /// <returns>The original underlying value</returns>
+        public int CompareExchange(int value, int comparand)
+        {
+            return Interlocked.CompareExchange(ref _storage.value, value, comparand);
+        }
+
         void IAtomicRef<int>.Store(ref int value, MemoryOrder order)
         {
             Store(value, order);

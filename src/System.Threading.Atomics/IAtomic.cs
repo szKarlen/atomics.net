@@ -25,6 +25,14 @@
         /// Gets value whether the object is lock-free
         /// </summary>
         bool IsLockFree { get; }
+
+        /// <summary>
+        /// Atomically compares underlying value with <paramref name="comparand"/> for equality and, if they are equal, replaces the first value.
+        /// </summary>
+        /// <param name="value">The value that replaces the underlying value if the comparison results in equality</param>
+        /// <param name="comparand">The value that is compared to the underlying value.</param>
+        /// <returns>The original underlying value</returns>
+        T CompareExchange(T value, T comparand);
     }
 
     interface IAtomicRef<T> : IAtomic<T> where T : struct

@@ -75,6 +75,17 @@ namespace System.Threading.Atomics
         }
 
         /// <summary>
+        /// Atomically compares underlying value with <paramref name="comparand"/> for equality and, if they are equal, replaces the first value.
+        /// </summary>
+        /// <param name="value">The value that replaces the underlying value if the comparison results in equality</param>
+        /// <param name="comparand">The value that is compared to the underlying value.</param>
+        /// <returns>The original underlying value</returns>
+        public bool CompareExchange(bool value, bool comparand)
+        {
+            return _storage.CompareExchange(value.ToInt32(), comparand.ToInt32()) != 0;
+        }
+
+        /// <summary>
         /// Converts the of this instance to its equivalent string representation (either "True" or "False").
         /// </summary>
         /// <returns><see cref="bool.TrueString"/> if the value of this instance is true, or <see cref="bool.FalseString"/> if the value of this instance is false.</returns>
@@ -85,11 +96,19 @@ namespace System.Threading.Atomics
 
         bool IAtomicOperators<bool>.CompareExchange(ref bool location1, bool value, bool comparand)
         {
-            int intLocation = location1.ToInt32();
             int intValue = value.ToInt32();
             int intComparand = comparand.ToInt32();
-
-            return ((IAtomicOperators<int>) _storage).CompareExchange(ref intLocation, intValue, intComparand) == 0;
+            while (true)
+            {
+                bool temp = location1;
+                int location = temp.ToInt32();
+                int result = Interlocked.CompareExchange(ref location, intValue, intComparand);
+                if (result == location1.ToInt32())
+                {
+                    location1 = value;
+                    return temp;
+                }
+            }
         }
 
         /// <summary>
