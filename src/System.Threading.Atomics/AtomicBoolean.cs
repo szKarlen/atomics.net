@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace System.Threading.Atomics
 {
@@ -46,6 +47,7 @@ namespace System.Threading.Atomics
         /// </summary>
         /// <param name="value">The value to store</param>
         /// <param name="order">The <see cref="MemoryOrder"/> to achieve</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Store(bool value, MemoryOrder order)
         {
             _storage.Store(value ? 1 : 0, order);
@@ -61,6 +63,7 @@ namespace System.Threading.Atomics
         /// </summary>
         /// <param name="order">The <see cref="MemoryOrder"/> to achieve</param>
         /// <returns>The underlying value with provided <paramref name="order"/></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Load(MemoryOrder order)
         {
             return _storage.Load(order) != 0;
@@ -80,6 +83,7 @@ namespace System.Threading.Atomics
         /// <param name="value">The value that replaces the underlying value if the comparison results in equality</param>
         /// <param name="comparand">The value that is compared to the underlying value.</param>
         /// <returns>The original underlying value</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool CompareExchange(bool value, bool comparand)
         {
             return _storage.CompareExchange(value.ToInt32(), comparand.ToInt32()) != 0;

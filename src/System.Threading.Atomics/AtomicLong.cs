@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace System.Threading.Atomics
@@ -198,6 +199,7 @@ namespace System.Threading.Atomics
         /// <param name="value">The value that replaces the underlying value if the comparison results in equality</param>
         /// <param name="comparand">The value that is compared to the underlying value.</param>
         /// <returns>The original underlying value</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public long CompareExchange(long value, long comparand)
         {
             return Interlocked.CompareExchange(ref _storage.value, value, comparand);

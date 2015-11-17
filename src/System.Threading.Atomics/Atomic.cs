@@ -246,6 +246,7 @@ namespace System.Threading.Atomics
         /// <param name="value">The value that replaces the underlying value if the comparison results in equality</param>
         /// <param name="comparand">The value that is compared to the underlying value.</param>
         /// <returns>The original underlying value</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T CompareExchange(T value, T comparand)
         {
             return this._storage.CompareExchange(value, comparand);
@@ -284,6 +285,7 @@ namespace System.Threading.Atomics
         /// </summary>
         /// <param name="value">The value to store</param>
         /// <param name="order">The <see cref="MemoryOrder"/> to achieve</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Store(ref T value, MemoryOrder order)
         {
             _storage.Store(ref value, order);
@@ -294,6 +296,7 @@ namespace System.Threading.Atomics
         /// </summary>
         /// <param name="value">The value to store</param>
         /// <param name="order">The <see cref="MemoryOrder"/> to achieve</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Store(T value, MemoryOrder order)
         {
             _storage.Store(value, order);
@@ -325,6 +328,7 @@ namespace System.Threading.Atomics
         /// </summary>
         /// <param name="order">The <see cref="MemoryOrder"/> to achieve</param>
         /// <returns>The underlying value with provided <paramref name="order"/></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T Load(MemoryOrder order)
         {
             return _storage.Load(order);
