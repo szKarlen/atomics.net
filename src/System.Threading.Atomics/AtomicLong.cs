@@ -217,7 +217,8 @@ namespace System.Threading.Atomics
         /// <returns>The value of <paramref name="atomicLong"/> incremented by 1.</returns>
         public static AtomicLong operator ++(AtomicLong atomicLong)
         {
-            return Interlocked.Increment(ref atomicLong._storage.value);
+            Interlocked.Increment(ref atomicLong._storage.value);
+            return atomicLong;
         }
 
         /// <summary>
@@ -227,7 +228,8 @@ namespace System.Threading.Atomics
         /// <returns>The value of <paramref name="atomicLong"/> decremented by 1.</returns>
         public static AtomicLong operator --(AtomicLong atomicLong)
         {
-            return Interlocked.Decrement(ref atomicLong._storage.value);
+            Interlocked.Decrement(ref atomicLong._storage.value);
+            return atomicLong;
         }
 
         /// <summary>
@@ -238,7 +240,7 @@ namespace System.Threading.Atomics
         /// <returns>The result of adding value to <paramref name="atomicLong"/></returns>
         public static long operator +(AtomicLong atomicLong, long value)
         {
-            return Interlocked.Add(ref atomicLong._storage.value, value);
+            return atomicLong.Load(MemoryOrder.SeqCst) + value;
         }
 
         /// <summary>
@@ -249,7 +251,7 @@ namespace System.Threading.Atomics
         /// <returns>The result of subtracting value from <see cref="AtomicLong"/></returns>
         public static long operator -(AtomicLong atomicLong, long value)
         {
-            return Interlocked.Add(ref atomicLong._storage.value, -value);
+            return atomicLong.Load(MemoryOrder.SeqCst) - value;
         }
 
         /// <summary>
@@ -260,30 +262,7 @@ namespace System.Threading.Atomics
         /// <returns>The result of multiplying <see cref="AtomicLong"/> and <paramref name="value"/></returns>
         public static long operator *(AtomicLong atomicLong, long value)
         {
-            bool entered = false;
-            long currentValue = atomicLong.Value;
-
-            if (atomicLong._order == MemoryOrder.SeqCst)
-            {
-                Monitor.Enter(atomicLong._instanceLock, ref entered);
-            }
-
-            long result = currentValue * value;
-            try
-            {
-                long tempValue;
-                do
-                {
-                    tempValue = Interlocked.CompareExchange(ref atomicLong._storage.value, result, currentValue);
-                } while (tempValue != currentValue);
-            }
-            finally
-            {
-                if (entered)
-                    Monitor.Exit(atomicLong._instanceLock);
-            }
-            
-            return result;
+            return atomicLong.Load(MemoryOrder.SeqCst) * value;
         }
 
         /// <summary>
@@ -296,30 +275,7 @@ namespace System.Threading.Atomics
         {
             if (value == 0) throw new DivideByZeroException();
 
-            bool entered = false;
-            long currentValue = atomicLong.Value;
-
-            if (atomicLong._order == MemoryOrder.SeqCst)
-            {
-                Monitor.Enter(atomicLong._instanceLock, ref entered);
-            }
-
-            long result = currentValue / value;
-            try
-            {
-                long tempValue;
-                do
-                {
-                    tempValue = Interlocked.CompareExchange(ref atomicLong._storage.value, result, currentValue);
-                } while (tempValue != currentValue);
-            }
-            finally
-            {
-                if (entered)
-                    Monitor.Exit(atomicLong._instanceLock);
-            }
-
-            return result;
+            return atomicLong.Load(MemoryOrder.SeqCst) / value;
         }
 
         /// <summary>

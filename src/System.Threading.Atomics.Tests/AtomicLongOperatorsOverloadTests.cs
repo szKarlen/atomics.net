@@ -48,11 +48,13 @@ namespace System.Threading.Atomics.Tests
         [Fact]
         public void AtomicLong_Addition_AcqRel_Should_Success()
         {
-            var atomicLong = new AtomicLong(long.MaxValue - 1);
+            const long initialValue = long.MaxValue - 1;
+            var atomicLong = new AtomicLong(initialValue);
 
             var result = atomicLong+1;
 
             Assert.Equal(long.MaxValue, result);
+            Assert.Equal(initialValue, atomicLong.Value);
         }
 
         [Fact]
@@ -63,26 +65,31 @@ namespace System.Threading.Atomics.Tests
             var result = atomicLong - 1;
 
             Assert.Equal(long.MaxValue-1, result);
+            Assert.Equal(long.MaxValue, atomicLong.Value);
         }
 
         [Fact]
         public void AtomicLong_Multiplication_AcqRel_Should_Success()
         {
-            var atomicLong = new AtomicLong(123);
+            const long initialValue = 123;
+            var atomicLong = new AtomicLong(initialValue);
 
             var result = atomicLong * 2;
 
             Assert.Equal(123*2, result);
+            Assert.Equal(initialValue, atomicLong.Value);
         }
 
         [Fact]
         public void AtomicLong_Division_AcqRel_Should_Success()
         {
+            const long initialValue = 256;
             var atomicLong = new AtomicLong(256);
 
             var result = atomicLong / 2;
 
             Assert.Equal(256 / 2, result);
+            Assert.Equal(initialValue, atomicLong.Value);
         }
 
         [Fact]

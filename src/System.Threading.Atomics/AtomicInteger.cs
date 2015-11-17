@@ -213,7 +213,8 @@ namespace System.Threading.Atomics
         /// <returns>The value of <paramref name="atomicInteger"/> incremented by 1.</returns>
         public static AtomicInteger operator ++(AtomicInteger atomicInteger)
         {
-            return Interlocked.Increment(ref atomicInteger._storage.value);
+            Interlocked.Increment(ref atomicInteger._storage.value);
+            return atomicInteger;
         }
 
         /// <summary>
@@ -223,7 +224,8 @@ namespace System.Threading.Atomics
         /// <returns>The value of <paramref name="atomicInteger"/> decremented by 1.</returns>
         public static AtomicInteger operator --(AtomicInteger atomicInteger)
         {
-            return Interlocked.Decrement(ref atomicInteger._storage.value);
+            Interlocked.Decrement(ref atomicInteger._storage.value);
+            return atomicInteger;
         }
 
         /// <summary>
@@ -234,7 +236,7 @@ namespace System.Threading.Atomics
         /// <returns>The result of adding value to <paramref name="atomicInteger"/></returns>
         public static int operator +(AtomicInteger atomicInteger, int value)
         {
-            return Interlocked.Add(ref atomicInteger._storage.value, value);
+            return atomicInteger.Load(MemoryOrder.SeqCst) + value;
         }
 
         /// <summary>
@@ -245,7 +247,7 @@ namespace System.Threading.Atomics
         /// <returns>The result of subtracting value from <see cref="AtomicInteger"/></returns>
         public static int operator -(AtomicInteger atomicInteger, int value)
         {
-            return Interlocked.Add(ref atomicInteger._storage.value, -value);
+            return atomicInteger.Load(MemoryOrder.SeqCst) - value;
         }
 
         /// <summary>
@@ -256,31 +258,7 @@ namespace System.Threading.Atomics
         /// <returns>The result of multiplying <see cref="AtomicInteger"/> and <paramref name="value"/></returns>
         public static int operator *(AtomicInteger atomicInteger, int value)
         {
-            bool entered = false;
-            int currentValue = atomicInteger.Value;
-
-            if (atomicInteger._order == MemoryOrder.SeqCst)
-            {
-                Monitor.Enter(atomicInteger._instanceLock, ref entered);
-            }
-
-            int result = currentValue * value;
-            try
-            {
-                int tempValue;
-                do
-                {
-                    tempValue = Interlocked.CompareExchange(ref atomicInteger._storage.value, result, currentValue);
-                } while (tempValue != currentValue);
-
-            }
-            finally
-            {
-                if (entered)
-                    Monitor.Exit(atomicInteger._instanceLock);
-            }
-            
-            return result;
+            return atomicInteger.Load(MemoryOrder.SeqCst) * value;
         }
 
         /// <summary>
@@ -293,30 +271,7 @@ namespace System.Threading.Atomics
         {
             if (value == 0) throw new DivideByZeroException();
 
-            bool entered = false;
-            int currentValue = atomicInteger.Value;
-
-            if (atomicInteger._order == MemoryOrder.SeqCst)
-            {
-                Monitor.Enter(atomicInteger._instanceLock, ref entered);
-            }
-
-            int result = currentValue / value;
-            try
-            {
-                int tempValue;
-                do
-                {
-                    tempValue = Interlocked.CompareExchange(ref atomicInteger._storage.value, result, currentValue);
-                } while (tempValue != currentValue);
-            }
-            finally
-            {
-                if (entered)
-                    Monitor.Exit(atomicInteger._instanceLock);
-            }
-            
-            return result;
+            return atomicInteger.Load(MemoryOrder.SeqCst) / value;
         }
 
         /// <summary>

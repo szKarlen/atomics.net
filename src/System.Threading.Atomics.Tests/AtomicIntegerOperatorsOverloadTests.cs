@@ -168,41 +168,48 @@ namespace System.Threading.Atomics.Tests
         [Fact]
         public void AtomicInteger_Addition_SeqCst_Should_Success()
         {
-            var atomicInteger = new AtomicInteger(int.MaxValue - 1, MemoryOrder.SeqCst);
+            const int initialValue = int.MaxValue - 1;
+            var atomicInteger = new AtomicInteger(initialValue);
 
             var result = atomicInteger + 1;
 
             Assert.Equal(int.MaxValue, result);
+            Assert.Equal(initialValue, atomicInteger.Value);
         }
 
         [Fact]
         public void AtomicInteger_Subtraction_SeqCst_Should_Success()
         {
-            var atomicInteger = new AtomicInteger(int.MaxValue, MemoryOrder.SeqCst);
+            var atomicInteger = new AtomicInteger(int.MaxValue);
 
             var result = atomicInteger - 1;
 
             Assert.Equal(int.MaxValue - 1, result);
+            Assert.Equal(int.MaxValue, atomicInteger.Value);
         }
 
         [Fact]
         public void AtomicInteger_Multiplication_SeqCst_Should_Success()
         {
-            var atomicInteger = new AtomicInteger(123, MemoryOrder.SeqCst);
+            const int initialValue = 123;
+            var atomicInteger = new AtomicInteger(initialValue);
 
             var result = atomicInteger * 2;
 
-            Assert.Equal(123 * 2, result);
+            Assert.Equal(initialValue * 2, result);
+            Assert.Equal(initialValue, atomicInteger.Value);
         }
 
         [Fact]
         public void AtomicInteger_Division_SeqCst_Should_Success()
         {
-            var atomicInteger = new AtomicInteger(256, MemoryOrder.SeqCst);
+            const int initialValue = 256;
+            var atomicInteger = new AtomicInteger(initialValue);
 
             var result = atomicInteger / 2;
 
-            Assert.Equal(256 / 2, result);
+            Assert.Equal(initialValue / 2, result);
+            Assert.Equal(initialValue, atomicInteger.Value);
         }
 
         [Fact]
