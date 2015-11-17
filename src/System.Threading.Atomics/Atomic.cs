@@ -249,7 +249,12 @@ namespace System.Threading.Atomics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T CompareExchange(T value, T comparand)
         {
-            return this._storage.CompareExchange(value, comparand);
+            return _storage.CompareExchange(value, comparand);
+        }
+        
+        T IAtomic<T>.CompareExchange(T value, T comparand)
+        {
+            return this._writer.CompareExchange(ref this._value, value, comparand);
         }
 
         void IAtomic<T>.Store(T value, MemoryOrder order)
