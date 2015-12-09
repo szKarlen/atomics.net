@@ -45,6 +45,7 @@ namespace System.Threading.Atomics
         /// <summary>
         /// Gets or sets atomically the underlying reference
         /// </summary>
+        /// <remarks>CAS loop is used for <see cref="MemoryOrder.AcqRel"/></remarks>
         public T Value
         {
             get

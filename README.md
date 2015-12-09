@@ -7,15 +7,15 @@ This package enables .NET projects to use atomic primitives.
 Design and implementation
 -------
 
-Project aims to be very close to C++ 11 standard atomics by design and usage. For example, The [memory order](http://en.cppreference.com/w/cpp/atomic/memory_order) flag could be provided to primitives.
+Project aims to be very close to C++ 11 standard atomics by design and usage. For example, the [memory order](http://en.cppreference.com/w/cpp/atomic/memory_order) semantics is supported.
 
-Although the library is a PCL itself, the minimum required version of .NET - 4.5. But you can compile for .NET 4.0 and earlier. The Itanium-related stuff (volatile reads with proper memory barriers usages, etc.) will be present by using ITANIUM_CPU directive (see [docs](Documentation/memorymodel101.md)).
+Although the library is a PCL itself, the minimum required version of .NET is 4.5. But you can compile for .NET 4.0 and earlier. The Itanium-related stuff as well as ARM ones (volatile reads with proper memory barriers usages, etc.) will be present by using ITANIUM_CPU or ARM_CPU directives respectively (see [docs](Documentation/memorymodel101.md)).
 
 For ECMA MM implementations of CLI on ARM architecture the conditional compilation is supported by using ARM_CPU directive.
 
 The default memory semantics for the library's primitives (like `Atomic<T>`, etc.) is `MemoryOrder.SeqCst`, whereas `AtomicReference<T>` uses `MemoryOrder.AcqRel`, which fits very well with CAS approach and CLR 2.0 memory model.
 
-The option for sequential consistency (i.e. `SeqCst`) is implemented by using intrinsic functions (with compilation to proper CPU instruction) or a combination of Acquire/Release with sequential order emulation through exclusion locks, when atomic read/writes to particular POD are not supported by HW.
+The option for sequential consistency (i.e. `SeqCst`) is implemented by using intrinsic functions (with compilation to proper CPU instruction) or a combination of Acquire/Release with sequential order emulation through exclusion locks, when atomic reads/writes to particular POD are not supported by HW.
 
 Specifying Acquire only or Release only flag falls back to full Acquire/Release semantics for get/set operations or combinations of.
 
@@ -30,19 +30,19 @@ Atomic primitives
 
 Supported types and operations
 -------
-Read/writes operations on references are provided by `AtomicReference<T>`.
+Reads/writes operations on references are provided by `AtomicReference<T>`.
 The `Atomic<T>` class should be used for structs (i.e. value types), including (`char`, `byte`, etc.).
 
-`AtomicInteger` and `AtomicLong` classes has support for `+, -, *, /, ++, --, +=, -=, *=, /=` operators with atomicity guarantees.
+`AtomicInteger` and `AtomicLong` classes has support for `+, -, *, /, ++, --` operators with atomicity guarantees.
 
-All primitives implement the implicit conversion operator overloads with atomic access.
+All primitives implement the implicit conversion operator overload with atomic access.
 
 Integers ranging from 8 to 64 bit are supported as well as unsigned ones.
 
 False Sharing
 -------
 
-`AtomicInteger` and `AtomicLong` classes has support for memory alignment alongside modern CPU's cache lines. Use flag `align` in constructor of either `Atomic<T>`, `AtomicInteger`, `AtomicLong` or `AtomicBoolean`. Only specializations of `Atomic<T>` with Int32, Int64 and Boolean uses alignment.
+`AtomicInteger` and `AtomicLong` classes has support for memory alignment alongside modern CPU's cache lines. Use flag `align` in constructors of either `Atomic<T>`, `AtomicInteger`, `AtomicLong` or `AtomicBoolean`. Only specializations of `Atomic<T>` with Int32, Int64 and Boolean has effect.
 
 Sample usage
 -------
@@ -156,10 +156,12 @@ CAS notes
 Usually **compare-and-swap (CAS)** is used in lock-free algorithms to maintain thread-safety, while avoiding locks. Especially often the `compare_exchange_weak` variation is used.
 Provided by the .NET Framework [`Interlocked.CompareExchange`](https://msdn.microsoft.com/ru-ru/library/system.threading.interlocked.compareexchange(v=vs.110).aspx) method is the C++ [`compare_and_exchange_strong`](http://en.cppreference.com/w/cpp/atomic/atomic/compare_exchange) analog. The `compare_exchange_weak` is not supported.
 
-Current implementation of atomics.net uses CAS approach for lock-free atomic operations (the `Atomic<T>.Value` property uses CAS for setter.
+Current implementation of atomics.net uses CAS approach for lock-free atomic operations (the `Atomic<T>.Value` property uses CAS for setter in Acquire/Release mode.
 
 Changelog
 -------
+* RC4:
+  - Minor fixes
 * RC3:
   - New `AtomicReference<T>.Set<TData>(Func<T, TData, T>setter, TData data)` method overload
   - New byref `Store(ref T value, MemoryOrder order)` method for `Atomic<T>`, `AtomicInteger`, `AtomicLong` and `AtomicBoolean`
@@ -173,13 +175,11 @@ Changelog
   - `AtomicReference<T>.Set()` method fix for CAS
   - C++ 11 atomic Load/Store methods as well as IsLockFree property support in primitives
   - Docs and samples update
-* Beta2:
+* Beta1, Beta2:
+  - Docs update
   - Lock-free stack samples
   - NuGet package support
   - Fixes
-* Beta1:
-  - Thread interruption support in AtomicInteger, AtomicLong
-  - Docs update
 * Alpha:
   - Initial milestone of project
   
