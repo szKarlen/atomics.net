@@ -158,31 +158,13 @@ Provided by the .NET Framework [`Interlocked.CompareExchange`](https://msdn.micr
 
 Current implementation of atomics.net uses CAS approach for lock-free atomic operations (the `Atomic<T>.Value` property uses CAS for setter in Acquire/Release mode.
 
-Changelog
+Roadmap
 -------
-* RC4:
-  - Minor fixes
-* RC3:
-  - New `AtomicReference<T>.Set<TData>(Func<T, TData, T>setter, TData data)` method overload
-  - New byref `Store(ref T value, MemoryOrder order)` method for `Atomic<T>`, `AtomicInteger`, `AtomicLong` and `AtomicBoolean`
-  - Optimization of Acquire/Release and Seq_Cst read/writes performance on x86
-  - ITANIUM_CPU conditional compilation support
-* RC2:
-  - `align` flag support in `Atomic<T>`, `AtomicInteger`, `AtomicLong` and `AtomicBoolean` for false sharing prevention alongside of CPU's cache lines
-  - Bug fixes in CAS loops
-  - ARM_CPU conditional compilation support
-* RC1:
-  - `AtomicReference<T>.Set()` method fix for CAS
-  - C++ 11 atomic Load/Store methods as well as IsLockFree property support in primitives
-  - Docs and samples update
-* Beta1, Beta2:
-  - Docs update
-  - Lock-free stack samples
-  - NuGet package support
-  - Fixes
-* Alpha:
-  - Initial milestone of project
-  
+
+The following primitives are expected to be included in upcoming release
+* `AtomicReferenceArray<T>`
+* `AtomicIntegerArray`
+* `AtomicLongArray`
 
 Contributing
 -------
@@ -194,7 +176,7 @@ NuGet
 
 [Package's page](https://www.nuget.org/packages/System.Threading.Atomics)
 
-Command: `PM> Install-Package System.Threading.Atomics -Pre`
+Command: `PM> Install-Package System.Threading.Atomics`
 
 License
 -------
