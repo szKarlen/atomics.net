@@ -13,8 +13,6 @@ namespace System.Threading.Atomics
         private MemoryOrder _order;
         private readonly BoxedInt64 _storage;
 
-        private readonly object _instanceLock = new object();
-
         /// <summary>
         /// Creates new instance of <see cref="AtomicLong"/>
         /// </summary>
@@ -304,7 +302,7 @@ namespace System.Threading.Atomics
         /// <returns>A hash code for the current <see cref="AtomicLong"/></returns>
         public override int GetHashCode()
         {
-            return _instanceLock.GetHashCode();
+            return base.GetHashCode();
         }
 
         /// <summary>
