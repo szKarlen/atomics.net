@@ -191,7 +191,7 @@ namespace System.Threading.Atomics
 
         T IAtomic<T>.Value
         {
-            get { return Platform.Read(ref _value); }
+            get { return Load(_order == MemoryOrder.SeqCst ? MemoryOrder.SeqCst : MemoryOrder.Acquire); }
             set
             {
                 if (_order == MemoryOrder.SeqCst)
