@@ -32,7 +32,7 @@ namespace System.Threading.Atomics
         /// <param name="align">True to store the underlying value aligned, otherwise False</param>
         public AtomicInteger(int value, MemoryOrder order = MemoryOrder.SeqCst, bool align = false)
         {
-            if (!order.IsSpported()) throw new ArgumentException(string.Format("{0} is not supported", order));
+            if (!order.IsSpported()) throw new ArgumentException(string.Format("{0} is not supported", order.ToString()));
 
             _order = order;
             this._storage = BoxedInt32.Create(value, align);
