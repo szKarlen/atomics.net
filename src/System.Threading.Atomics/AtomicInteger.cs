@@ -10,10 +10,8 @@ namespace System.Threading.Atomics
     [DebuggerDisplay("{Value}")]
     public sealed class AtomicInteger : IAtomicRef<int>, IEquatable<int>, IEquatable<AtomicInteger>
     {
-        private MemoryOrder _order; // making volatile to prohibit reordering in constructors
+        private readonly MemoryOrder _order;
         private readonly BoxedInt32 _storage;
-
-        private readonly object _instanceLock = new object();
 
         /// <summary>
         /// Creates new instance of <see cref="AtomicInteger"/>
@@ -34,7 +32,7 @@ namespace System.Threading.Atomics
         /// <param name="align">True to store the underlying value aligned, otherwise False</param>
         public AtomicInteger(int value, MemoryOrder order = MemoryOrder.SeqCst, bool align = false)
         {
-            if (!order.IsSpported()) throw new ArgumentException(string.Format("{0} is not supported", order));
+            if (!order.IsSpported()) throw new ArgumentException(string.Format("{0} is not supported", order.ToString()));
 
             _order = order;
             this._storage = BoxedInt32.Create(value, align);
@@ -300,7 +298,7 @@ namespace System.Threading.Atomics
         /// <returns>A hash code for the current <see cref="AtomicInteger"/></returns>
         public override int GetHashCode()
         {
-            return _instanceLock.GetHashCode();
+            return base.GetHashCode();
         }
 
         /// <summary>

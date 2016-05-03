@@ -17,7 +17,7 @@ namespace System.Threading.Atomics
         private volatile T _value;
         private readonly MemoryOrder _order;
         
-        private readonly object _instanceLock = new object();
+        private readonly object _instanceLock;
 
         /// <summary>
         /// Creates new instance of <see cref="AtomicLong"/>
@@ -36,8 +36,9 @@ namespace System.Threading.Atomics
         /// <param name="order">Affects the way store operation occur. Load operations are always use <see cref="MemoryOrder.Acquire"/> semantics</param>
         public AtomicReference(T initialValue, MemoryOrder order = MemoryOrder.AcqRel)
         {
-            if (!order.IsSpported()) throw new ArgumentException(string.Format("{0} is not supported", order));
+            if (!order.IsSpported()) throw new ArgumentException(string.Format("{0} is not supported", order.ToString()));
 
+            _instanceLock = order == MemoryOrder.SeqCst ? new object() : null;
             _order = order;
             this._value = initialValue;
         }
@@ -223,7 +224,7 @@ namespace System.Threading.Atomics
         /// <returns>A hash code for the current <see cref="AtomicReference{T}"/></returns>
         public override int GetHashCode()
         {
-            return _instanceLock.GetHashCode();
+            return base.GetHashCode();
         }
 
         /// <summary>

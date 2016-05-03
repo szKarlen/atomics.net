@@ -13,8 +13,6 @@ namespace System.Threading.Atomics
         private MemoryOrder _order;
         private readonly BoxedInt64 _storage;
 
-        private readonly object _instanceLock = new object();
-
         /// <summary>
         /// Creates new instance of <see cref="AtomicLong"/>
         /// </summary>
@@ -34,7 +32,7 @@ namespace System.Threading.Atomics
         /// <param name="align">True to store the underlying value aligned, otherwise False</param>
         public AtomicLong(long value, MemoryOrder order = MemoryOrder.SeqCst, bool align = false)
         {
-            if (!order.IsSpported()) throw new ArgumentException(string.Format("{0} is not supported", order));
+            if (!order.IsSpported()) throw new ArgumentException(string.Format("{0} is not supported", order.ToString()));
 
             _order = order;
             this._storage = BoxedInt64.Create(value, align);
@@ -304,7 +302,7 @@ namespace System.Threading.Atomics
         /// <returns>A hash code for the current <see cref="AtomicLong"/></returns>
         public override int GetHashCode()
         {
-            return _instanceLock.GetHashCode();
+            return base.GetHashCode();
         }
 
         /// <summary>
