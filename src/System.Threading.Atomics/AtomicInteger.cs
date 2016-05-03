@@ -41,8 +41,6 @@ namespace System.Threading.Atomics
         [StructLayout(LayoutKind.Explicit)]
         class BoxedInt32
         {
-            private const int CacheLineSize = 64;
-
             [FieldOffset(0)]
             public int value;
 
@@ -69,11 +67,11 @@ namespace System.Threading.Atomics
                 }
             }
 
-            [StructLayout(LayoutKind.Explicit, Size = CacheLineSize - sizeof(int))]
+            [StructLayout(LayoutKind.Explicit, Size = Platform.CacheLineSize - sizeof(int))]
             unsafe struct __32BitAlignedValue
             {
                 [FieldOffset(0)]
-                private fixed byte pad[CacheLineSize - sizeof(int)];
+                private fixed byte pad[Platform.CacheLineSize - sizeof(int)];
             }
 
             public static BoxedInt32 Create(bool aligned)

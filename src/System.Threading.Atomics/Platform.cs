@@ -7,6 +7,8 @@ namespace System.Threading.Atomics
 {
     public static class Platform
     {
+        public const int CacheLineSize = 64;
+
         /// <summary>
         /// Reads value from provided <paramref name="location"/> without any synchronization
         /// </summary>
