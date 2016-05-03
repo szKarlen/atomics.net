@@ -17,8 +17,7 @@ namespace System.Threading.Atomics
         private static readonly IAtomicOperators<T> Intrinsics = new PrimitiveAtomics() as IAtomicOperators<T>;
 
         private readonly IAtomicRef<T> _storage;
-        private readonly object _instanceLock = new object();
-
+        
         private readonly MemoryOrder _order;
         private readonly IAtomicOperators<T> _writer;
 
@@ -62,9 +61,6 @@ namespace System.Threading.Atomics
                 throw new NotSupportedException(string.Format("{0} type is not supported", typeof(T)));
             }
 
-            if (object.ReferenceEquals(_storage, this) || _storage is LockBasedAtomic)
-                _instanceLock = new object();
-
             _order = order;
             _storage.Value = value;
         }
@@ -89,20 +85,25 @@ namespace System.Threading.Atomics
             return new LockBasedAtomic(this);
         }
 
+        /*
+         * We use lock(this) to have lower memory footprint
+         * Additional instance lock (i.e. object) is redundant
+         * LockBasedAtomic is used only as a storage and doesn't get exposed
+         */
         class LockBasedAtomic : IAtomicRef<T>
         {
-            private readonly Atomic<T> _atomic;
+            private readonly IAtomic<T> _atomic;
 
-            public LockBasedAtomic(Atomic<T> atomic)
+            public LockBasedAtomic(IAtomic<T> atomic)
             {
                 _atomic = atomic;
             }
 
             T IAtomicOperators<T>.CompareExchange(ref T location1, T value, T comparand)
             {
-                lock (_atomic._instanceLock)
+                lock (this)
                 {
-                    return ((IAtomic<T>) _atomic).CompareExchange(ref location1, value, comparand);
+                    return _atomic.CompareExchange(ref location1, value, comparand);
                 }
             }
 
@@ -115,41 +116,41 @@ namespace System.Threading.Atomics
             {
                 get
                 {
-                    lock (_atomic._instanceLock)
+                    lock (this)
                     {
-                        return ((IAtomic<T>) _atomic).Value;
+                        return _atomic.Value;
                     }
                 }
                 set
                 {
-                    lock (_atomic._instanceLock)
+                    lock (this)
                     {
-                        ((IAtomic<T>) _atomic).Value = value;
+                        _atomic.Value = value;
                     }
                 }
             }
 
             public void Store(T value, MemoryOrder order)
             {
-                lock (_atomic._instanceLock)
+                lock (this)
                 {
-                    ((IAtomic<T>)_atomic).Store(value, order);
+                    _atomic.Store(value, order);
                 }
             }
 
             public T Load(MemoryOrder order)
             {
-                lock (_atomic._instanceLock)
+                lock (this)
                 {
-                    return ((IAtomic<T>)_atomic).Load(order);
+                    return _atomic.Load(order);
                 }
             }
 
             public void Store(ref T value, MemoryOrder order)
             {
-                lock (_atomic._instanceLock)
+                lock (this)
                 {
-                    ((IAtomic<T>)_atomic).Store(value, order);
+                    _atomic.Store(value, order);
                 }
             }
 
@@ -157,7 +158,7 @@ namespace System.Threading.Atomics
 
             public T CompareExchange(T value, T comparand)
             {
-                return ((IAtomicOperators<T>) this).CompareExchange(ref _atomic._value, value, comparand);
+                return ((IAtomicOperators<T>) this).CompareExchange(ref value, value, comparand);
             }
         }
 
@@ -367,7 +368,7 @@ namespace System.Threading.Atomics
         /// <returns>A hash code for the current <see cref="Atomic{T}"/></returns>
         public override int GetHashCode()
         {
-            return (_instanceLock != null ? _instanceLock.GetHashCode() : _storage.GetHashCode());
+            return base.GetHashCode();
         }
 
         /// <summary>
