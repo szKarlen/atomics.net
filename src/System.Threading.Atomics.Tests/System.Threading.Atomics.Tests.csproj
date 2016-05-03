@@ -60,6 +60,7 @@
     <Otherwise />
   </Choose>
   <ItemGroup>
+    <Compile Include="AlignedIntegerTests.cs" />
     <Compile Include="AtomicEqualityTests.cs" />
     <Compile Include="AtomicConstructorTests.cs" />
     <Compile Include="AtomicBooleanLoadStoreTests.cs" />

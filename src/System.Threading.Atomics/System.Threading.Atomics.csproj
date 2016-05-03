@@ -63,6 +63,8 @@
     <!-- A reference to the entire .NET Framework is automatically included -->
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Int32Aligned.cs" />
+    <Compile Include="Int64Aligned.cs" />
     <Compile Include="Platform.cs" />
     <Compile Include="Atomic.cs" />
     <Compile Include="AtomicBoolean.cs" />
