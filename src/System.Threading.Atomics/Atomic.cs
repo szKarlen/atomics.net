@@ -157,7 +157,10 @@ namespace System.Threading.Atomics
 
             public T CompareExchange(T value, T comparand)
             {
-                return ((IAtomicCASProvider<T>) this).CompareExchange(ref value, value, comparand);
+                lock (this)
+                {
+                    return _atomic.CompareExchange(value, comparand);
+                }
             }
         }
 
