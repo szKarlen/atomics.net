@@ -13,7 +13,6 @@ namespace System.Threading.Atomics
     public sealed class Atomic<T> : IAtomicRef<T>, IEquatable<T>, IEquatable<Atomic<T>> where T : struct, IEquatable<T>
     {
         private T _value;
-        private static readonly int PodSize = Marshal.SizeOf(typeof (T));
         private static readonly IAtomicOperators<T> Intrinsics = new PrimitiveAtomics() as IAtomicOperators<T>;
 
         private readonly IAtomicRef<T> _storage;
@@ -80,7 +79,7 @@ namespace System.Threading.Atomics
             {
                 return (IAtomicRef<T>)(IAtomicRef<long>)new AtomicLong(order, align);
             }
-            if (AtomicRWSupported() || PodSize <= IntPtr.Size)
+            if (Pod<T>.AtomicRWSupported() || Pod<T>.Size <= IntPtr.Size)
                 return this;
             return new LockBasedAtomic(this);
         }
@@ -162,21 +161,6 @@ namespace System.Threading.Atomics
             }
         }
 
-        private static bool AtomicRWSupported()
-        {
-            var podType = typeof (T);
-            return podType == typeof(bool)
-                || podType == typeof(char)
-                || podType == typeof(byte)
-                || podType == typeof(sbyte)
-                || podType == typeof(short)
-                || podType == typeof(ushort)
-                || podType == typeof(int)
-                || podType == typeof(uint)
-                || podType == typeof(float)
-                || (IntPtr.Size == 8 && (podType == typeof(double) || podType == typeof(long)));
-        }
-
         /// <summary>
         /// Gets or sets atomically the underlying value
         /// </summary>
@@ -236,7 +220,7 @@ namespace System.Threading.Atomics
             get
             {
                 if (object.ReferenceEquals(_storage, this))
-                    return AtomicRWSupported() || PodSize <= IntPtr.Size;
+                    return Pod<T>.AtomicRWSupported() || Pod<T>.Size <= IntPtr.Size;
                 return _storage.IsLockFree;
             }
         }
