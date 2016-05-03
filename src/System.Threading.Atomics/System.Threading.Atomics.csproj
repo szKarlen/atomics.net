@@ -70,7 +70,7 @@
     <Compile Include="AtomicLong.cs" />
     <Compile Include="AtomicReference.cs" />
     <Compile Include="IAtomic.cs" />
-    <Compile Include="IAtomicOperators.cs" />
+    <Compile Include="IAtomicCASProvider.cs" />
     <Compile Include="MemoryOrder.cs" />
     <Compile Include="MemoryOrderHelpers.cs" />
     <Compile Include="Pod.cs" />

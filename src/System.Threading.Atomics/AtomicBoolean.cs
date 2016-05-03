@@ -98,7 +98,7 @@ namespace System.Threading.Atomics
             return this.Value ? bool.TrueString : bool.FalseString;
         }
 
-        bool IAtomicOperators<bool>.CompareExchange(ref bool location1, bool value, bool comparand)
+        bool IAtomicCASProvider<bool>.CompareExchange(ref bool location1, bool value, bool comparand)
         {
             int intValue = value.ToInt32();
             int intComparand = comparand.ToInt32();
@@ -199,7 +199,7 @@ namespace System.Threading.Atomics
             return (!ReferenceEquals(other, null) && (ReferenceEquals(this, other) || this.Value == other.Value));
         }
 
-        bool IAtomicOperators<bool>.Supports<TType>()
+        bool IAtomicCASProvider<bool>.Supports<TType>()
         {
             return typeof (TType) == typeof (bool);
         }

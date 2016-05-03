@@ -13,12 +13,12 @@ namespace System.Threading.Atomics
     public sealed class Atomic<T> : IAtomicRef<T>, IEquatable<T>, IEquatable<Atomic<T>> where T : struct, IEquatable<T>
     {
         private T _value;
-        private static readonly IAtomicOperators<T> Intrinsics = new PrimitiveAtomics() as IAtomicOperators<T>;
+        private static readonly IAtomicCASProvider<T> Intrinsics = new PrimitiveAtomics() as IAtomicCASProvider<T>;
 
         private readonly IAtomicRef<T> _storage;
         
         private readonly MemoryOrder _order;
-        private readonly IAtomicOperators<T> _writer;
+        private readonly IAtomicCASProvider<T> _writer;
 
         /// <summary>
         /// Creates new instance of <see cref="Atomic{T}"/>
@@ -98,7 +98,7 @@ namespace System.Threading.Atomics
                 _atomic = atomic;
             }
 
-            T IAtomicOperators<T>.CompareExchange(ref T location1, T value, T comparand)
+            T IAtomicCASProvider<T>.CompareExchange(ref T location1, T value, T comparand)
             {
                 lock (this)
                 {
@@ -106,7 +106,7 @@ namespace System.Threading.Atomics
                 }
             }
 
-            bool IAtomicOperators<T>.Supports<TType>()
+            bool IAtomicCASProvider<T>.Supports<TType>()
             {
                 return true;
             }
@@ -157,7 +157,7 @@ namespace System.Threading.Atomics
 
             public T CompareExchange(T value, T comparand)
             {
-                return ((IAtomicOperators<T>) this).CompareExchange(ref value, value, comparand);
+                return ((IAtomicCASProvider<T>) this).CompareExchange(ref value, value, comparand);
             }
         }
 
@@ -194,7 +194,7 @@ namespace System.Threading.Atomics
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        T IAtomicOperators<T>.CompareExchange(ref T location1, T value, T comparand)
+        T IAtomicCASProvider<T>.CompareExchange(ref T location1, T value, T comparand)
         {
             T temp = location1;
             if (!temp.Equals(comparand))
@@ -207,7 +207,7 @@ namespace System.Threading.Atomics
             return temp;
         }
 
-        bool IAtomicOperators<T>.Supports<TType>()
+        bool IAtomicCASProvider<T>.Supports<TType>()
         {
             return true;
         }
@@ -433,48 +433,48 @@ namespace System.Threading.Atomics
             return !x.Equals(y);
         }
 
-        private class PrimitiveAtomics : IAtomicOperators<int>,
-            IAtomicOperators<long>,
-            IAtomicOperators<double>,
-            IAtomicOperators<float>,
-            IAtomicOperators<uint>,
-            IAtomicOperators<ulong>,
-            IAtomicOperators<sbyte>,
-            IAtomicOperators<byte>,
-            IAtomicOperators<short>,
-            IAtomicOperators<ushort>
+        private class PrimitiveAtomics : IAtomicCASProvider<int>,
+            IAtomicCASProvider<long>,
+            IAtomicCASProvider<double>,
+            IAtomicCASProvider<float>,
+            IAtomicCASProvider<uint>,
+            IAtomicCASProvider<ulong>,
+            IAtomicCASProvider<sbyte>,
+            IAtomicCASProvider<byte>,
+            IAtomicCASProvider<short>,
+            IAtomicCASProvider<ushort>
         {
             public bool Supports<TType>() where TType : struct
             {
-                return this as IAtomicOperators<TType> != null;
+                return this as IAtomicCASProvider<TType> != null;
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            int IAtomicOperators<int>.CompareExchange(ref int location1, int value, int comparand)
+            int IAtomicCASProvider<int>.CompareExchange(ref int location1, int value, int comparand)
             {
                 return Interlocked.CompareExchange(ref location1, value, comparand);
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            long IAtomicOperators<long>.CompareExchange(ref long location1, long value, long comparand)
+            long IAtomicCASProvider<long>.CompareExchange(ref long location1, long value, long comparand)
             {
                 return Interlocked.CompareExchange(ref location1, value, comparand);
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            double IAtomicOperators<double>.CompareExchange(ref double location1, double value, double comparand)
+            double IAtomicCASProvider<double>.CompareExchange(ref double location1, double value, double comparand)
             {
                 return Interlocked.CompareExchange(ref location1, value, comparand);
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            float IAtomicOperators<float>.CompareExchange(ref float location1, float value, float comparand)
+            float IAtomicCASProvider<float>.CompareExchange(ref float location1, float value, float comparand)
             {
                 return Interlocked.CompareExchange(ref location1, value, comparand);
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            unsafe uint IAtomicOperators<uint>.CompareExchange(ref uint location1, uint value, uint comparand)
+            unsafe uint IAtomicCASProvider<uint>.CompareExchange(ref uint location1, uint value, uint comparand)
             {
                 fixed (uint* ptr = &location1)
                 {
@@ -484,7 +484,7 @@ namespace System.Threading.Atomics
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            unsafe ulong IAtomicOperators<ulong>.CompareExchange(ref ulong location1, ulong value, ulong comparand)
+            unsafe ulong IAtomicCASProvider<ulong>.CompareExchange(ref ulong location1, ulong value, ulong comparand)
             {
                 fixed (ulong* ptr = &location1)
                 {
@@ -494,7 +494,7 @@ namespace System.Threading.Atomics
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            sbyte IAtomicOperators<sbyte>.CompareExchange(ref sbyte location1, sbyte value, sbyte comparand)
+            sbyte IAtomicCASProvider<sbyte>.CompareExchange(ref sbyte location1, sbyte value, sbyte comparand)
             {
                 while (true)
                 {
@@ -510,7 +510,7 @@ namespace System.Threading.Atomics
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            byte IAtomicOperators<byte>.CompareExchange(ref byte location1, byte value, byte comparand)
+            byte IAtomicCASProvider<byte>.CompareExchange(ref byte location1, byte value, byte comparand)
             {
                 while (true)
                 {
@@ -526,7 +526,7 @@ namespace System.Threading.Atomics
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            short IAtomicOperators<short>.CompareExchange(ref short location1, short value, short comparand)
+            short IAtomicCASProvider<short>.CompareExchange(ref short location1, short value, short comparand)
             {
                 while (true)
                 {
@@ -542,7 +542,7 @@ namespace System.Threading.Atomics
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            ushort IAtomicOperators<ushort>.CompareExchange(ref ushort location1, ushort value, ushort comparand)
+            ushort IAtomicCASProvider<ushort>.CompareExchange(ref ushort location1, ushort value, ushort comparand)
             {
                 while (true)
                 {

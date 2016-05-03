@@ -362,12 +362,12 @@ namespace System.Threading.Atomics
             set { this.Value = value; }
         }
 
-        int IAtomicOperators<int>.CompareExchange(ref int location1, int value, int comparand)
+        int IAtomicCASProvider<int>.CompareExchange(ref int location1, int value, int comparand)
         {
             return Interlocked.CompareExchange(ref location1, value, comparand);
         }
 
-        bool IAtomicOperators<int>.Supports<TType>()
+        bool IAtomicCASProvider<int>.Supports<TType>()
         {
             return typeof (TType) == typeof (int);
         }

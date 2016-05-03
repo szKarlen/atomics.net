@@ -1,6 +1,6 @@
 ﻿namespace System.Threading.Atomics
 {
-    interface IAtomic<T> : IAtomicOperators<T> where T : struct
+    interface IAtomic<T> : IAtomicCASProvider<T> where T : struct
     {
         /// <summary>
         /// Gets or sets atomically the underlying value
