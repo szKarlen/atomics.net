@@ -8,10 +8,16 @@ namespace System.Threading.Atomics
     /// An <see cref="long"/> value wrapper with atomic operations
     /// </summary>
     [DebuggerDisplay("{Value}")]
+    [StructLayout(LayoutKind.Explicit, Pack = 4)]
     public sealed class AtomicLong : IAtomicRef<long>, IEquatable<long>, IEquatable<AtomicLong>
     {
-        private MemoryOrder _order;
-        private readonly BoxedInt64 _storage;
+        [FieldOffset(0)]
+        private long acqRelValue;
+        [FieldOffset(sizeof(long))]
+        private readonly MemoryOrder _order;
+
+        [FieldOffset(sizeof(long) * sizeof(int))]
+        private BoxedInt64 _storage;
 
         /// <summary>
         /// Creates new instance of <see cref="AtomicLong"/>
@@ -35,49 +41,60 @@ namespace System.Threading.Atomics
             if (!order.IsSpported()) throw new ArgumentException(string.Format("{0} is not supported", order.ToString()));
 
             _order = order;
-            this._storage = BoxedInt64.Create(value, align);
+            if (align)
+            {
+                this._storage = BoxedInt64.Create(value);
+            }
+            else
+            {
+                this.acqRelValue = value;
+                this._storage = BoxedInt64.Create(this);
+            }
         }
 
         [StructLayout(LayoutKind.Explicit)]
-        class BoxedInt64
+        struct BoxedInt64
         {
             [FieldOffset(0)]
-            public long value;
-
-            private BoxedInt64(long value)
-            {
-                this.value = value;
-            }
+            private AtomicLong _storage;
+            [FieldOffset(0)]
+            public DataSlot Slot;
 
             [StructLayout(LayoutKind.Explicit)]
-            class AlignedBoxedInt64 : BoxedInt64
+            public class DataSlot
             {
                 [FieldOffset(0)]
-                public new long value;
+                public long AcqRelValue;
 
-                [FieldOffset(sizeof(long))]
-                private __64BitAlignedValue _alignedValue;
+                [FieldOffset(0)]
+                private Int64Aligned _value;
 
-                public AlignedBoxedInt64(long value) : base(value)
+                public DataSlot(long value)
                 {
+                    _value = new Int64Aligned(value);
                 }
             }
 
-            [StructLayout(LayoutKind.Explicit, Size = Platform.CacheLineSize - sizeof(long))]
-            unsafe struct __64BitAlignedValue
+            private BoxedInt64(AtomicLong value)
             {
-                [FieldOffset(0)]
-                private fixed byte pad[Platform.CacheLineSize - sizeof(long)];
+                Slot = null;
+                _storage = value;
             }
 
-            public static BoxedInt64 Create(bool aligned)
+            private BoxedInt64(long value)
             {
-                return Create(0, aligned);
+                _storage = null;
+                Slot = new DataSlot(value);
             }
 
-            public static BoxedInt64 Create(long value, bool aligned)
+            public static BoxedInt64 Create(AtomicLong atomicInteger)
             {
-                return aligned ? new AlignedBoxedInt64(value) : new BoxedInt64(value);
+                return new BoxedInt64(atomicInteger);
+            }
+
+            public static BoxedInt64 Create(long value)
+            {
+                return new BoxedInt64(value);
             }
         }
 
@@ -89,15 +106,15 @@ namespace System.Threading.Atomics
         {
             get
             {
-                if (_order != MemoryOrder.SeqCst) return IntPtr.Size == 8 ? _storage.value : Volatile.Read(ref _storage.value);
+                if (_order != MemoryOrder.SeqCst) return IntPtr.Size == 8 ? _storage.Slot.AcqRelValue : Volatile.Read(ref _storage.Slot.AcqRelValue);
 
-                return Volatile.Read(ref _storage.value);
+                return Volatile.Read(ref _storage.Slot.AcqRelValue);
             }
             set
             {
                 if (_order == MemoryOrder.SeqCst)
                 {
-                    Interlocked.Exchange(ref _storage.value, value);
+                    Interlocked.Exchange(ref _storage.Slot.AcqRelValue, value);
                     return;
                 }
 
@@ -105,10 +122,10 @@ namespace System.Threading.Atomics
                 long tempValue;
                 do
                 {
-                    currentValue = _storage.value;
+                    currentValue = _storage.Slot.AcqRelValue;
                     tempValue = value;
-                } while (_storage.value != currentValue ||
-                         Interlocked.CompareExchange(ref _storage.value, tempValue, currentValue) != currentValue);
+                } while (_storage.Slot.AcqRelValue != currentValue ||
+                         Interlocked.CompareExchange(ref _storage.Slot.AcqRelValue, tempValue, currentValue) != currentValue);
             }
         }
 
@@ -122,7 +139,7 @@ namespace System.Threading.Atomics
             switch (order)
             {
                 case MemoryOrder.Relaxed:
-                    this._storage.value = value;
+                    this._storage.Slot.AcqRelValue = value;
                     break;
                 case MemoryOrder.Consume:
                     throw new NotSupportedException();
@@ -132,18 +149,18 @@ namespace System.Threading.Atomics
                 case MemoryOrder.AcqRel:
 #if ARM_CPU || ITANIUM_CPU
                     Platform.MemoryBarrier();
-                    _storage.value = value;
+                    _storage.Slot.AcqRelValue = value;
 #else
-                    Interlocked.Exchange(ref _storage.value, value);
+                    Interlocked.Exchange(ref _storage.Slot.AcqRelValue, value);
 #endif
                     break;
                 case MemoryOrder.SeqCst:
 #if ARM_CPU || ITANIUM_CPU
                     Platform.MemoryBarrier();
-                    _storage.value = value;
+                    _storage.Slot.AcqRelValue = value;
                     Platform.MemoryBarrier();
 #else
-                    Interlocked.Exchange(ref _storage.value, value);
+                    Interlocked.Exchange(ref _storage.Slot.AcqRelValue, value);
 #endif
                     break;
                 default:
@@ -165,16 +182,16 @@ namespace System.Threading.Atomics
             switch (order)
             {
                 case MemoryOrder.Relaxed:
-                    return _storage.value;
+                    return _storage.Slot.AcqRelValue;
                 case MemoryOrder.Acquire:
                 case MemoryOrder.AcqRel:
                 case MemoryOrder.SeqCst:
 #if ARM_CPU
-                    var tmp = _storage.value;
+                    var tmp = _storage.Slot.AcqRelValue;
                     Platform.MemoryBarrier();
                     return tmp;
 #else
-                    return Volatile.Read(ref _storage.value);
+                    return Volatile.Read(ref _storage.Slot.AcqRelValue);
 #endif
                 default:
                     throw new ArgumentOutOfRangeException("order");
@@ -198,7 +215,7 @@ namespace System.Threading.Atomics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public long CompareExchange(long value, long comparand)
         {
-            return Interlocked.CompareExchange(ref _storage.value, value, comparand);
+            return Interlocked.CompareExchange(ref _storage.Slot.AcqRelValue, value, comparand);
         }
 
         void IAtomicRef<long>.Store(ref long value, MemoryOrder order)
@@ -213,7 +230,7 @@ namespace System.Threading.Atomics
         /// <returns>The value of <paramref name="atomicLong"/> incremented by 1.</returns>
         public static AtomicLong operator ++(AtomicLong atomicLong)
         {
-            Interlocked.Increment(ref atomicLong._storage.value);
+            Interlocked.Increment(ref atomicLong._storage.Slot.AcqRelValue);
             return atomicLong;
         }
 
@@ -224,7 +241,7 @@ namespace System.Threading.Atomics
         /// <returns>The value of <paramref name="atomicLong"/> decremented by 1.</returns>
         public static AtomicLong operator --(AtomicLong atomicLong)
         {
-            Interlocked.Decrement(ref atomicLong._storage.value);
+            Interlocked.Decrement(ref atomicLong._storage.Slot.AcqRelValue);
             return atomicLong;
         }
 

@@ -8,10 +8,13 @@ namespace System.Threading.Atomics
     /// An <see cref="int"/> value wrapper with atomic operations
     /// </summary>
     [DebuggerDisplay("{Value}")]
+    [StructLayout(LayoutKind.Explicit, Pack = 4)]
     public sealed class AtomicInteger : IAtomicRef<int>, IEquatable<int>, IEquatable<AtomicInteger>
     {
+        [FieldOffset(0)]
+        private volatile int acqRelValue;
+        [FieldOffset(sizeof(int))]
         private readonly MemoryOrder _order;
-        private readonly BoxedInt32 _storage;
 
         /// <summary>
         /// Creates new instance of <see cref="AtomicInteger"/>
@@ -35,56 +38,65 @@ namespace System.Threading.Atomics
             if (!order.IsSpported()) throw new ArgumentException(string.Format("{0} is not supported", order.ToString()));
 
             _order = order;
-            this._storage = BoxedInt32.Create(value, align);
+            if (align)
+            {
+                this._storage = BoxedInt32.Create(value);
+            }
+            else
+            {
+                this.acqRelValue = value;
+                this._storage = BoxedInt32.Create(this);
+            }
         }
 
+        [FieldOffset(sizeof(int) * 2)]
+        private BoxedInt32 _storage;
+
         [StructLayout(LayoutKind.Explicit)]
-        class BoxedInt32
+        struct BoxedInt32
         {
             [FieldOffset(0)]
-            public int value;
-
+            private AtomicInteger _storage;
             [FieldOffset(0)]
-            public volatile int acqRelValue;
-
-            private BoxedInt32(int value)
-            {
-                this.value = value;
-            }
+            public DataSlot Slot;
 
             [StructLayout(LayoutKind.Explicit)]
-            [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Portability", "CA1900:ValueTypeFieldsShouldBePortable", MessageId = "_alignedValue"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Portability", "CA1900:ValueTypeFieldsShouldBePortable", MessageId = "pad")]
-            class AlignedBoxedInt32 : BoxedInt32
+            public class DataSlot
             {
                 [FieldOffset(0)]
-                public new int value;
+                public volatile int AcqRelValue;
 
-                [FieldOffset(sizeof(int))]
-                private __32BitAlignedValue _alignedValue;
+                [FieldOffset(0)]
+                private Int32Aligned _value;
 
-                public AlignedBoxedInt32(int value) : base(value)
+                public DataSlot(int value)
                 {
+                    _value = new Int32Aligned(value);
                 }
             }
 
-            [StructLayout(LayoutKind.Explicit, Size = Platform.CacheLineSize - sizeof(int))]
-            unsafe struct __32BitAlignedValue
+            private BoxedInt32(AtomicInteger value)
             {
-                [FieldOffset(0)]
-                private fixed byte pad[Platform.CacheLineSize - sizeof(int)];
+                Slot = null;
+                _storage = value;
             }
 
-            public static BoxedInt32 Create(bool aligned)
+            private BoxedInt32(int value)
             {
-                return Create(0, aligned);
+                _storage = null;
+                Slot = new DataSlot(value);
             }
 
-            public static BoxedInt32 Create(int value, bool aligned)
+            public static BoxedInt32 Create(AtomicInteger atomicInteger)
             {
-                return aligned ? new AlignedBoxedInt32(value) : new BoxedInt32(value);
+                return new BoxedInt32(atomicInteger);
+            }
+
+            public static BoxedInt32 Create(int value)
+            {
+                return new BoxedInt32(value);
             }
         }
-
         /// <summary>
         /// Gets or sets atomically the underlying value
         /// </summary>
@@ -96,7 +108,7 @@ namespace System.Threading.Atomics
             {
                 if (_order == MemoryOrder.SeqCst)
                 {
-                    Interlocked.Exchange(ref _storage.value, value);
+                    Interlocked.Exchange(ref _storage.Slot.AcqRelValue, value);
                     return;
                 }
 
@@ -104,10 +116,10 @@ namespace System.Threading.Atomics
                 int tempValue;
                 do
                 {
-                    currentValue = _storage.value;
+                    currentValue = _storage.Slot.AcqRelValue;
                     tempValue = value;
-                } while (_storage.value != currentValue ||
-                         Interlocked.CompareExchange(ref _storage.value, tempValue, currentValue) != currentValue);
+                } while (_storage.Slot.AcqRelValue != currentValue ||
+                         Interlocked.CompareExchange(ref _storage.Slot.AcqRelValue, tempValue, currentValue) != currentValue);
             }
         }
 
@@ -122,7 +134,7 @@ namespace System.Threading.Atomics
             switch (order)
             {
                 case MemoryOrder.Relaxed:
-                    this._storage.value = value;
+                    this._storage.Slot.AcqRelValue = value;
                     break;
                 case MemoryOrder.Consume:
                     throw new NotSupportedException();
@@ -130,14 +142,14 @@ namespace System.Threading.Atomics
                     throw new InvalidOperationException("Cannot set (store) value with Acquire semantics");
                 case MemoryOrder.Release:
                 case MemoryOrder.AcqRel:
-                    _storage.acqRelValue = value;
+                    _storage.Slot.AcqRelValue = value;
                     break;
                 case MemoryOrder.SeqCst:
 #if ARM_CPU
                    Platform.MemoryBarrier();
-                     _storage.acqRelValue = value;
+                     _storage.Slot.AcqRelValue = value;
 #else
-                    Interlocked.Exchange(ref _storage.value, value);
+                    Interlocked.Exchange(ref _storage.Slot.AcqRelValue, value);
 #endif
                     break;
                 default:
@@ -155,22 +167,22 @@ namespace System.Threading.Atomics
             switch (order)
             {
                 case MemoryOrder.Relaxed:
-                    return _storage.value;
+                    return _storage.Slot.AcqRelValue;
                 case MemoryOrder.Consume:
                     throw new NotSupportedException();
                 case MemoryOrder.Acquire:
-                    return _storage.acqRelValue;
+                    return _storage.Slot.AcqRelValue;
                 case MemoryOrder.Release:
                     throw new InvalidOperationException("Cannot get (load) value with Release semantics");
                 case MemoryOrder.AcqRel:
-                    return _storage.acqRelValue;
+                    return _storage.Slot.AcqRelValue;
                 case MemoryOrder.SeqCst:
 #if ARM_CPU
-                    var tmp = _storage.acqRelValue;
+                    var tmp = _storage.Slot.AcqRelValue;
                     Platform.MemoryBarrier();
                     return tmp;
 #else
-                    return _storage.acqRelValue;
+                    return _storage.Slot.AcqRelValue;
 #endif
                 default:
                     throw new ArgumentOutOfRangeException("order");
@@ -194,7 +206,7 @@ namespace System.Threading.Atomics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int CompareExchange(int value, int comparand)
         {
-            return Interlocked.CompareExchange(ref _storage.value, value, comparand);
+            return Interlocked.CompareExchange(ref _storage.Slot.AcqRelValue, value, comparand);
         }
 
         void IAtomicRef<int>.Store(ref int value, MemoryOrder order)
@@ -209,7 +221,7 @@ namespace System.Threading.Atomics
         /// <returns>The value of <paramref name="atomicInteger"/> incremented by 1.</returns>
         public static AtomicInteger operator ++(AtomicInteger atomicInteger)
         {
-            Interlocked.Increment(ref atomicInteger._storage.value);
+            Interlocked.Increment(ref atomicInteger._storage.Slot.AcqRelValue);
             return atomicInteger;
         }
 
@@ -220,7 +232,7 @@ namespace System.Threading.Atomics
         /// <returns>The value of <paramref name="atomicInteger"/> decremented by 1.</returns>
         public static AtomicInteger operator --(AtomicInteger atomicInteger)
         {
-            Interlocked.Decrement(ref atomicInteger._storage.value);
+            Interlocked.Decrement(ref atomicInteger._storage.Slot.AcqRelValue);
             return atomicInteger;
         }
 
