@@ -9,7 +9,6 @@
         /// <summary>
         /// Relaxed operation: there are no synchronization or ordering constraints, only atomicity is required of this operation.
         /// </summary>
-        [Obsolete("CLR JIT on Itanium does emit ST.REL for non-volatile writes.")]
         Relaxed,
         
         /// <summary>
