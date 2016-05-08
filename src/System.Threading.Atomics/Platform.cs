@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 #if NET40
 using Interlocked = System.Threading.Thread;
 #endif
@@ -119,6 +120,24 @@ namespace System.Threading.Atomics
         internal static TTo static_cast<TFrom, TTo>(ref TFrom source)
         {
             return __refvalue(__makeref(source),TTo);
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = sizeof(int))]
+        internal struct Data32
+        {
+            [FieldOffset(0)]
+            public int Int32Value;
+            [FieldOffset(0)]
+            public float SingleValue;
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = sizeof(long))]
+        internal struct Data64
+        {
+            [FieldOffset(0)]
+            public long Int64Value;
+            [FieldOffset(0)]
+            public double DoubleValue;
         }
     }
 }

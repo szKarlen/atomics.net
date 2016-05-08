@@ -380,15 +380,5 @@ namespace System.Threading.Atomics
             get { return this.Value; }
             set { this.Value = value; }
         }
-
-        long IAtomicCASProvider<long>.CompareExchange(ref long location1, long value, long comparand)
-        {
-            return Interlocked.CompareExchange(ref location1, value, comparand);
-        }
-
-        bool IAtomicCASProvider<long>.Supports<TType>()
-        {
-            return typeof(TType) == typeof(long);
-        }
     }
 }

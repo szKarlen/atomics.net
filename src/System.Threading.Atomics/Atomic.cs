@@ -10,15 +10,17 @@ namespace System.Threading.Atomics
     /// </summary>
     /// <typeparam name="T">The underlying struct's type</typeparam>
     [DebuggerDisplay("{Value}")]
-    public sealed class Atomic<T> : IAtomicRef<T>, IEquatable<T>, IEquatable<Atomic<T>> where T : struct, IEquatable<T>
+    public sealed class Atomic<T> : IAtomicRef<T>, 
+        IEquatable<T>,
+        IAtomicCASProvider<T>,
+        IEquatable<Atomic<T>> where T : struct, IEquatable<T>
     {
         private T _value;
-        private static readonly IAtomicCASProvider<T> Intrinsics = new PrimitiveAtomics() as IAtomicCASProvider<T>;
+        //private static readonly IAtomicCASProvider<T> Intrinsics = new PrimitiveAtomics() as IAtomicCASProvider<T>;
 
         private readonly IAtomicRef<T> _storage;
         
         private readonly MemoryOrder _order;
-        private readonly IAtomicCASProvider<T> _writer;
 
         /// <summary>
         /// Creates new instance of <see cref="Atomic{T}"/>
@@ -43,47 +45,45 @@ namespace System.Threading.Atomics
 
             _storage = GetStorage(order, align);
 
-            if (Intrinsics != null && Intrinsics.Supports<T>())
-            {
-                _writer = Intrinsics;
-            }
-            else if (_storage as Atomic<T> == this)
-            {
-                _writer = this;
-            }
-            else if (_storage.Supports<T>())
-            {
-                _writer = _storage;
-            }
-            else
-            {
-                throw new NotSupportedException(string.Format("{0} type is not supported", typeof(T)));
-            }
-
             _order = order;
             _storage.Value = value;
         }
 
         private IAtomicRef<T> GetStorage(MemoryOrder order, bool align)
         {
-            var type = typeof (T);
-            if (type == typeof (bool))
+            if (typeof(T) == typeof(bool))
             {
                 return (IAtomicRef<T>)(IAtomicRef<bool>)new AtomicBoolean(order, align);
             }
-            if (type == typeof(int))
+            if (typeof(T) == typeof(int))
             {
                 return (IAtomicRef<T>)(IAtomicRef<int>)new AtomicInteger(order, align);
             }
-            if (type == typeof(long))
+            if (typeof(T) == typeof(long))
             {
                 return (IAtomicRef<T>)(IAtomicRef<long>)new AtomicLong(order, align);
+            }
+            if (Pod<T>.Size == sizeof (int))
+            {
+                return new Boxed32Bit();
+            }
+            if (Pod<T>.Size <= sizeof(int))
+            {
+                return new LockBasedAtomic(new Boxed32Bit());
+            }
+            if (Pod<T>.Size == sizeof(long))
+            {
+                return new Boxed64Bit();
+            }
+            if (Pod<T>.Size <= sizeof(long))
+            {
+                return new LockBasedAtomic(new Boxed64Bit());
             }
             if (Pod<T>.AtomicRWSupported() || Pod<T>.Size <= IntPtr.Size)
                 return this;
             return new LockBasedAtomic(this);
         }
-
+        
         /*
          * We use lock(this) to have lower memory footprint
          * Additional instance lock (i.e. object) is redundant
@@ -96,19 +96,6 @@ namespace System.Threading.Atomics
             public LockBasedAtomic(IAtomic<T> atomic)
             {
                 _atomic = atomic;
-            }
-
-            T IAtomicCASProvider<T>.CompareExchange(ref T location1, T value, T comparand)
-            {
-                lock (this)
-                {
-                    return _atomic.CompareExchange(ref location1, value, comparand);
-                }
-            }
-
-            bool IAtomicCASProvider<T>.Supports<TType>()
-            {
-                return true;
             }
 
             public T Value
@@ -191,28 +178,245 @@ namespace System.Threading.Atomics
                 T tempValue;
                 do
                 {
-                    tempValue = _writer.CompareExchange(ref this._value, value, currentValue);
+                    tempValue = _storage.CompareExchange(value, currentValue);
                 } while (!tempValue.Equals(currentValue));
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        T IAtomicCASProvider<T>.CompareExchange(ref T location1, T value, T comparand)
+        class Boxed32Bit : IAtomicCASProvider<byte>,
+            IAtomicCASProvider<sbyte>,
+            IAtomicCASProvider<Int16>,
+            IAtomicCASProvider<UInt16>,
+            IAtomicCASProvider<Int32>,
+            IAtomicCASProvider<UInt32>,
+            IAtomicCASProvider<float>,
+            IAtomicRef<T>
         {
-            T temp = location1;
-            if (!temp.Equals(comparand))
+            public Platform.Data32 AcqRelValue;
+
+            public void Store(ref T value, MemoryOrder order)
             {
-                Platform.MemoryBarrier();
-                location1 = value;
+                switch (order)
+                {
+                    case MemoryOrder.Relaxed:
+                        this.AcqRelValue.Int32Value = Platform.reinterpret_cast<T, int>(ref value);
+                        break;
+                    case MemoryOrder.Consume:
+                        throw new NotSupportedException();
+                    case MemoryOrder.Acquire:
+                        throw new InvalidOperationException("Cannot set (store) value with Acquire semantics");
+                    case MemoryOrder.Release:
+                    case MemoryOrder.AcqRel:
+                        this.AcqRelValue.Int32Value = Platform.reinterpret_cast<T, int>(ref value);
+                        break;
+                    case MemoryOrder.SeqCst:
+#if ARM_CPU
+                        Platform.MemoryBarrier();
+                        this.AcqRelValue.Int32Value = Platform.reinterpret_cast<T, int>(ref value);
+#else
+                        Interlocked.Exchange(ref AcqRelValue.Int32Value, Platform.reinterpret_cast<T, int>(ref value));
+#endif
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException("order");
+                }
             }
 
-            Platform.MemoryBarrier();
-            return temp;
+            public T Value
+            {
+                get { return Load(MemoryOrder.SeqCst); }
+                set { Store(value, MemoryOrder.SeqCst); }
+            }
+
+            public void Store(T value, MemoryOrder order)
+            {
+                Store(ref value, order);
+            }
+
+            public T Load(MemoryOrder order)
+            {
+                switch (order)
+                {
+                    case MemoryOrder.Relaxed:
+                        return Platform.reinterpret_cast<int, T>(ref AcqRelValue.Int32Value);
+                    case MemoryOrder.Consume:
+                        throw new NotSupportedException();
+                    case MemoryOrder.Acquire:
+                        return Platform.reinterpret_cast<int, T>(ref AcqRelValue.Int32Value);
+                    case MemoryOrder.Release:
+                        throw new InvalidOperationException("Cannot get (load) value with Release semantics");
+                    case MemoryOrder.AcqRel:
+                        return Platform.reinterpret_cast<int, T>(ref AcqRelValue.Int32Value);
+                    case MemoryOrder.SeqCst:
+#if ARM_CPU
+                        var tmp = Platform.reinterpret_cast<int, T>(ref AcqRelValue.Int32Value);
+                        Platform.MemoryBarrier();
+                        return tmp;
+#else
+                        return Platform.reinterpret_cast<int, T>(ref AcqRelValue.Int32Value);
+#endif
+                    default:
+                        throw new ArgumentOutOfRangeException("order");
+                }
+            }
+
+            public bool IsLockFree
+            {
+                get { return true; }
+            }
+
+            public T CompareExchange(T value, T comparand)
+            {
+                return (this as IAtomicCASProvider<T>).CompareExchange(value, comparand);
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            byte IAtomicCASProvider<byte>.CompareExchange(byte value, byte comparand)
+            {
+                return (byte)Interlocked.CompareExchange(ref AcqRelValue.Int32Value, value, comparand);
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            sbyte IAtomicCASProvider<sbyte>.CompareExchange(sbyte value, sbyte comparand)
+            {
+                return (sbyte)Interlocked.CompareExchange(ref AcqRelValue.Int32Value, value, comparand);
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            short IAtomicCASProvider<short>.CompareExchange(short value, short comparand)
+            {
+                return (short)Interlocked.CompareExchange(ref AcqRelValue.Int32Value, value, comparand);
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            ushort IAtomicCASProvider<ushort>.CompareExchange(ushort value, ushort comparand)
+            {
+                return (ushort)Interlocked.CompareExchange(ref AcqRelValue.Int32Value, value, comparand);
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            int IAtomicCASProvider<int>.CompareExchange(int value, int comparand)
+            {
+                return Interlocked.CompareExchange(ref AcqRelValue.Int32Value, value, comparand);
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            unsafe uint IAtomicCASProvider<uint>.CompareExchange(uint value, uint comparand)
+            {
+                var result = Interlocked.CompareExchange(ref AcqRelValue.Int32Value, *(int*)&value, *(int*)&comparand);
+                return *(uint*)&result;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            float IAtomicCASProvider<float>.CompareExchange(float value, float comparand)
+            {
+                return Interlocked.CompareExchange(ref AcqRelValue.SingleValue, value, comparand);
+            }
         }
 
-        bool IAtomicCASProvider<T>.Supports<TType>()
+        class Boxed64Bit : IAtomicCASProvider<long>,
+            IAtomicCASProvider<ulong>,
+            IAtomicCASProvider<double>,
+            IAtomicRef<T>
         {
-            return true;
+            public Platform.Data64 AcqRelValue;
+
+            long IAtomicCASProvider<long>.CompareExchange(long value, long comparand)
+            {
+                return Interlocked.CompareExchange(ref AcqRelValue.Int64Value, value, comparand);
+            }
+
+            unsafe ulong IAtomicCASProvider<ulong>.CompareExchange(ulong value, ulong comparand)
+            {
+                var result = Interlocked.CompareExchange(ref AcqRelValue.Int64Value, *(long*)&value, *(long*)&comparand);
+                return *(ulong*) &result;
+            }
+
+            double IAtomicCASProvider<double>.CompareExchange(double value, double comparand)
+            {
+                return Interlocked.CompareExchange(ref AcqRelValue.DoubleValue, value, comparand);
+            }
+
+            public T CompareExchange(T value, T comparand)
+            {
+                return ((IAtomicCASProvider<T>) this).CompareExchange(value, comparand);
+            }
+
+            public bool IsLockFree
+            {
+                get { return true; }
+            }
+
+            public void Store(ref T value, MemoryOrder order)
+            {
+                switch (order)
+                {
+                    case MemoryOrder.Relaxed:
+                        this.AcqRelValue.Int64Value = Platform.reinterpret_cast<T, long>(ref value);
+                        break;
+                    case MemoryOrder.Consume:
+                        throw new NotSupportedException();
+                    case MemoryOrder.Acquire:
+                        throw new InvalidOperationException("Cannot set (store) value with Acquire semantics");
+                    case MemoryOrder.Release:
+                    case MemoryOrder.AcqRel:
+#if ARM_CPU || ITANIUM_CPU
+                        Platform.MemoryBarrier();
+                        this.AcqRelValue.Int64Value = Platform.reinterpret_cast<T, long>(ref value);
+#else
+                        Interlocked.Exchange(ref AcqRelValue.Int64Value, Platform.reinterpret_cast<T, long>(ref value));
+#endif
+                        break;
+                    case MemoryOrder.SeqCst:
+#if ARM_CPU || ITANIUM_CPU
+                        Platform.MemoryBarrier();
+                        this.AcqRelValue.Int64Value = Platform.reinterpret_cast<T, long>(ref value);
+                        Platform.MemoryBarrier();
+#else
+                        Interlocked.Exchange(ref AcqRelValue.Int64Value, Platform.reinterpret_cast<T, long>(ref value));
+#endif
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException("order");
+                }
+            }
+
+            public T Value
+            {
+                get { return Load(MemoryOrder.SeqCst); }
+                set { Store(value, MemoryOrder.SeqCst); }
+            }
+
+            public void Store(T value, MemoryOrder order)
+            {
+                Store(ref value, order);
+            }
+
+            public T Load(MemoryOrder order)
+            {
+                if (order == MemoryOrder.Consume)
+                    throw new NotSupportedException();
+                if (order == MemoryOrder.Release)
+                    throw new InvalidOperationException("Cannot get (load) value with Release semantics");
+                switch (order)
+                {
+                    case MemoryOrder.Relaxed:
+                        return Platform.reinterpret_cast<long, T>(ref AcqRelValue.Int64Value);
+                    case MemoryOrder.Acquire:
+                    case MemoryOrder.AcqRel:
+                    case MemoryOrder.SeqCst:
+#if ARM_CPU
+                        var tmp = Platform.reinterpret_cast<long, T>(ref AcqRelValue.Int64Value);
+                        Platform.MemoryBarrier();
+                        return tmp;
+#else
+                        long value = Volatile.Read(ref AcqRelValue.Int64Value);
+                        return Platform.reinterpret_cast<long, T>(ref value);
+#endif
+                    default:
+                        throw new ArgumentOutOfRangeException("order");
+                }
+            }
         }
 
         /// <summary>
@@ -239,15 +443,23 @@ namespace System.Threading.Atomics
         {
             return _storage.CompareExchange(value, comparand);
         }
-        
+
         T IAtomic<T>.CompareExchange(T value, T comparand)
         {
-            return this._writer.CompareExchange(ref this._value, value, comparand);
+            T temp = _value;
+            if (!temp.Equals(comparand))
+            {
+                Platform.MemoryBarrier();
+                _value = value;
+            }
+
+            Platform.MemoryBarrier();
+            return temp;
         }
 
         void IAtomic<T>.Store(T value, MemoryOrder order)
         {
-            this.Store(ref value, order);
+            ((IAtomicRef<T>)this).Store(ref value, order);
         }
 
         void IAtomicRef<T>.Store(ref T value, MemoryOrder order)
@@ -410,7 +622,7 @@ namespace System.Threading.Atomics
         /// <returns><c>true</c> if <paramref name="x"/> and <paramref name="y"/> are equal; otherwise, <c>false</c>.</returns>
         public static bool operator ==(Atomic<T> x, Atomic<T> y)
         {
-            return (!object.ReferenceEquals(x, null) && x.Equals(y));
+            return !object.ReferenceEquals(x, null) && !object.ReferenceEquals(y, null) && x.Equals(y);
         }
 
         /// <summary>
@@ -421,144 +633,18 @@ namespace System.Threading.Atomics
         /// <returns><c>true</c> if <paramref name="x"/> and <paramref name="y"/> are not equal; otherwise, <c>false</c>.</returns>
         public static bool operator !=(Atomic<T> x, T y)
         {
-            if (object.ReferenceEquals(x, null))
-                return false;
-
-            T value = x.Value;
-            return !value.Equals(y);
+            return !object.ReferenceEquals(x, null) && !x.Equals(y);
         }
 
+        /// <summary>
+        /// Returns a value that indicates whether <see cref="Atomic{T}"/> and <typeparamref name="T"/> have different values.
+        /// </summary>
+        /// <param name="x">The first value (<see cref="Atomic{T}"/>) to compare.</param>
+        /// <param name="y">The second value (<see cref="Atomic{T}"/>) to compare.</param>
+        /// <returns><c>true</c> if <paramref name="x"/> and <paramref name="y"/> are not equal; otherwise, <c>false</c>.</returns>
         public static bool operator !=(Atomic<T> x, Atomic<T> y)
         {
-            if (object.ReferenceEquals(x, null))
-                return false;
-
-            return !x.Equals(y);
-        }
-
-        private class PrimitiveAtomics : IAtomicCASProvider<int>,
-            IAtomicCASProvider<long>,
-            IAtomicCASProvider<double>,
-            IAtomicCASProvider<float>,
-            IAtomicCASProvider<uint>,
-            IAtomicCASProvider<ulong>,
-            IAtomicCASProvider<sbyte>,
-            IAtomicCASProvider<byte>,
-            IAtomicCASProvider<short>,
-            IAtomicCASProvider<ushort>
-        {
-            public bool Supports<TType>() where TType : struct
-            {
-                return this as IAtomicCASProvider<TType> != null;
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            int IAtomicCASProvider<int>.CompareExchange(ref int location1, int value, int comparand)
-            {
-                return Interlocked.CompareExchange(ref location1, value, comparand);
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            long IAtomicCASProvider<long>.CompareExchange(ref long location1, long value, long comparand)
-            {
-                return Interlocked.CompareExchange(ref location1, value, comparand);
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            double IAtomicCASProvider<double>.CompareExchange(ref double location1, double value, double comparand)
-            {
-                return Interlocked.CompareExchange(ref location1, value, comparand);
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            float IAtomicCASProvider<float>.CompareExchange(ref float location1, float value, float comparand)
-            {
-                return Interlocked.CompareExchange(ref location1, value, comparand);
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            unsafe uint IAtomicCASProvider<uint>.CompareExchange(ref uint location1, uint value, uint comparand)
-            {
-                fixed (uint* ptr = &location1)
-                {
-                    var result = Interlocked.CompareExchange(ref *(int*)ptr, *(int*)&value, *(int*)&comparand);
-                    return *(uint*)&result;
-                }
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            unsafe ulong IAtomicCASProvider<ulong>.CompareExchange(ref ulong location1, ulong value, ulong comparand)
-            {
-                fixed (ulong* ptr = &location1)
-                {
-                    var result = Interlocked.CompareExchange(ref *(long*) ptr, *(long*)&value, *(long*)&comparand);
-                    return *(ulong*)&result;
-                }
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            sbyte IAtomicCASProvider<sbyte>.CompareExchange(ref sbyte location1, sbyte value, sbyte comparand)
-            {
-                while (true)
-                {
-                    sbyte temp = location1;
-                    int location = temp;
-                    int result = Interlocked.CompareExchange(ref location, value, comparand);
-                    if (result == location1)
-                    {
-                        location1 = value;
-                        return temp;
-                    }
-                }
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            byte IAtomicCASProvider<byte>.CompareExchange(ref byte location1, byte value, byte comparand)
-            {
-                while (true)
-                {
-                    byte temp = location1;
-                    int location = temp;
-                    int result = Interlocked.CompareExchange(ref location, value, comparand);
-                    if (result == location1)
-                    {
-                        location1 = value;
-                        return temp;
-                    }
-                }
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            short IAtomicCASProvider<short>.CompareExchange(ref short location1, short value, short comparand)
-            {
-                while (true)
-                {
-                    short temp = location1;
-                    int location = temp;
-                    int result = Interlocked.CompareExchange(ref location, value, comparand);
-                    if (result == location1)
-                    {
-                        location1 = value;
-                        return temp;
-                    }
-                }
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            ushort IAtomicCASProvider<ushort>.CompareExchange(ref ushort location1, ushort value, ushort comparand)
-            {
-                while (true)
-                {
-                    ushort temp = location1;
-                    int location = temp;
-                    int result = Interlocked.CompareExchange(ref location, value, comparand);
-                    if (result == location1)
-                    {
-                        location1 = value;
-                        return temp;
-                    }
-                }
-            }
+            return !object.ReferenceEquals(x, null) && !object.ReferenceEquals(y, null) && !x.Equals(y);
         }
     }
 }
