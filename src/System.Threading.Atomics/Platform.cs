@@ -103,5 +103,22 @@ namespace System.Threading.Atomics
             Interlocked.MemoryBarrier();
 #endif
         }
+
+        internal static unsafe TTo reinterpret_cast<TFrom, TTo>(ref TFrom source)
+        {
+            var sourcePtr = __makeref(source);
+
+            TTo dest = default(TTo);
+            var destPtr = __makeref(dest);
+            
+            *(void**)&destPtr = *(void**)&sourcePtr;
+
+            return __refvalue(destPtr,TTo);
+        }
+
+        internal static TTo static_cast<TFrom, TTo>(ref TFrom source)
+        {
+            return __refvalue(__makeref(source),TTo);
+        }
     }
 }
