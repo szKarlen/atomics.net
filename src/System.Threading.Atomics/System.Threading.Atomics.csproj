@@ -65,6 +65,7 @@
   <ItemGroup>
     <Compile Include="AtomicIntegerArray.cs" />
     <Compile Include="AtomicLongArray.cs" />
+    <Compile Include="AtomicReferenceArray.cs" />
     <Compile Include="IAtomicArray.cs" />
     <Compile Include="Int32Aligned.cs" />
     <Compile Include="Int64Aligned.cs" />
