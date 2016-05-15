@@ -9,7 +9,7 @@ namespace System.Threading.Atomics
 {
     public class AtomicReferenceArray<T> where T : class
     {
-        private readonly volatile T[] _data;
+        private readonly T[] _data;
         private readonly MemoryOrder _order;
 
         private readonly object _instanceLock;
