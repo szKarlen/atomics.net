@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace System.Threading.Atomics
 {
-    public class AtomicReferenceArray<T> where T : class
+    public class AtomicReferenceArray<T> : IReadOnlyCollection<T> where T : class
     {
         private readonly T[] _data;
         private readonly MemoryOrder _order;
@@ -222,6 +222,21 @@ namespace System.Threading.Atomics
         public T Set<TData>(int index, Func<T, TData, T> setter, TData data)
         {
             return Set(index, setter, data, this._order);
+        }
+
+        public int Count
+        {
+            get { return _data.Length; }
+        }
+
+        public IEnumerator<T> GetEnumerator()
+        {
+            return ((IEnumerable<T>) _data).GetEnumerator();
+        }
+
+        Collections.IEnumerator Collections.IEnumerable.GetEnumerator()
+        {
+            return _data.GetEnumerator();
         }
     }
 }

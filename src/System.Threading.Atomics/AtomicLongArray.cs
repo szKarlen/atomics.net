@@ -1,9 +1,11 @@
+using System.Collections.Generic;
+
 namespace System.Threading.Atomics
 {
     /// <summary>
     /// An <see cref="long"/> array wrapper with atomic operations
     /// </summary>
-    public class AtomicLongArray : IAtomicRefArray<long>
+    public class AtomicLongArray : IAtomicRefArray<long>, IReadOnlyCollection<long>
     {
         private readonly long[] _data;
         private readonly MemoryOrder _order;
@@ -145,6 +147,21 @@ namespace System.Threading.Atomics
         public long CompareExchange(int index, long value, long comparand)
         {
             return Interlocked.CompareExchange(ref this._data[index], value, comparand);
+        }
+
+        public int Count
+        {
+            get { return _data.Length; }
+        }
+
+        public IEnumerator<long> GetEnumerator()
+        {
+            return ((IEnumerable<long>)_data).GetEnumerator();
+        }
+
+        Collections.IEnumerator Collections.IEnumerable.GetEnumerator()
+        {
+            return _data.GetEnumerator();
         }
     }
 }

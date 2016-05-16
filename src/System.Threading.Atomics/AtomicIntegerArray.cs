@@ -9,7 +9,7 @@ namespace System.Threading.Atomics
     /// <summary>
     /// An <see cref="int"/> array wrapper with atomic operations
     /// </summary>
-    public class AtomicIntegerArray : IAtomicRefArray<int>
+    public class AtomicIntegerArray : IAtomicRefArray<int>, IReadOnlyCollection<int>
     {
         private readonly int[] _data;
         private readonly MemoryOrder _order;
@@ -150,6 +150,21 @@ namespace System.Threading.Atomics
         public int CompareExchange(int index, int value, int comparand)
         {
             return Interlocked.CompareExchange(ref this._data[index], value, comparand);
+        }
+
+        public int Count
+        {
+            get { return _data.Length; }
+        }
+
+        public IEnumerator<int> GetEnumerator()
+        {
+            return ((IEnumerable<int>)_data).GetEnumerator();
+        }
+
+        Collections.IEnumerator Collections.IEnumerable.GetEnumerator()
+        {
+            return _data.GetEnumerator();
         }
     }
 }
