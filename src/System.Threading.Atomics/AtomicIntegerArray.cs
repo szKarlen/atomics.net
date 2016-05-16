@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,6 +10,7 @@ namespace System.Threading.Atomics
     /// <summary>
     /// An <see cref="int"/> array wrapper with atomic operations
     /// </summary>
+    [DebuggerDisplay("Count = {Count}")]
     public class AtomicIntegerArray : IAtomicRefArray<int>, IReadOnlyCollection<int>
     {
         private readonly int[] _data;

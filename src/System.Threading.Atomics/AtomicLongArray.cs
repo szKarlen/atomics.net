@@ -1,10 +1,12 @@
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace System.Threading.Atomics
 {
     /// <summary>
     /// An <see cref="long"/> array wrapper with atomic operations
     /// </summary>
+    [DebuggerDisplay("Count = {Count}")]
     public class AtomicLongArray : IAtomicRefArray<long>, IReadOnlyCollection<long>
     {
         private readonly long[] _data;
