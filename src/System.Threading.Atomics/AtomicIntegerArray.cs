@@ -170,5 +170,25 @@ namespace System.Threading.Atomics
         {
             return GetEnumerator();
         }
+
+        /// <summary>
+        /// Increments an element at specified <paramref name="index"/> index by 1.
+        /// </summary>
+        /// <param name="index">The element's index.</param>
+        /// <returns>The incremented value of an element at specified <paramref name="index"/> index by 1.</returns>
+        public int IncrementAt(int index)
+        {
+            return Interlocked.Increment(ref _data[index]);
+        }
+
+        /// <summary>
+        /// Decrements an element at specified <paramref name="index"/> index by 1.
+        /// </summary>
+        /// <param name="index">The element's index.</param>
+        /// <returns>The decremented value of an element at specified <paramref name="index"/> index by 1.</returns>
+        public int DecrementAt(int index)
+        {
+            return Interlocked.Decrement(ref _data[index]);
+        }
     }
 }
