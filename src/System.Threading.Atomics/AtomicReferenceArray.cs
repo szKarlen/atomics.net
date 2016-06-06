@@ -25,7 +25,7 @@ namespace System.Threading.Atomics
         /// <param name="source">The array to copy elements from</param>
         /// <param name="order">Affects the way store operation occur. Default is <see cref="MemoryOrder.AcqRel"/> semantics</param>
         public AtomicReferenceArray(T[] source, MemoryOrder order = MemoryOrder.SeqCst)
-            : this(source.Length)
+            : this(source.Length, order)
         {
             source.CopyTo(_data, 0);
         }
