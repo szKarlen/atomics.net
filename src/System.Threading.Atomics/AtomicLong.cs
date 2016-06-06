@@ -151,7 +151,7 @@ namespace System.Threading.Atomics
                     Platform.MemoryBarrier();
                     _storage.Slot.AcqRelValue = value;
 #else
-                    Interlocked.Exchange(ref _storage.Slot.AcqRelValue, value);
+                    Volatile.Write(ref _storage.Slot.AcqRelValue, value);
 #endif
                     break;
                 case MemoryOrder.SeqCst:
