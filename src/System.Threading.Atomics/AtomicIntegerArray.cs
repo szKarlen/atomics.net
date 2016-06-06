@@ -62,9 +62,8 @@ namespace System.Threading.Atomics
                 case MemoryOrder.AcqRel:
 #if ARM_CPU || ITANIUM_CPU
                     Platform.MemoryBarrier();
-#else
-                    this._data[index] = value;
 #endif
+                    this._data[index] = value;
                     break;
                 case MemoryOrder.SeqCst:
 #if ARM_CPU || ITANIUM_CPU
