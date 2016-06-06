@@ -100,44 +100,26 @@ namespace System.Threading.Atomics
 
             public T Value
             {
-                get
-                {
-                    lock (this)
-                    {
-                        return _atomic.Value;
-                    }
-                }
-                set
-                {
-                    lock (this)
-                    {
-                        _atomic.Value = value;
-                    }
-                }
+                get { lock (this) return _atomic.Value; }
+                set { lock (this) _atomic.Value = value; }
             }
 
             public void Store(T value, MemoryOrder order)
             {
                 lock (this)
-                {
                     _atomic.Store(value, order);
-                }
             }
 
             public T Load(MemoryOrder order)
             {
                 lock (this)
-                {
                     return _atomic.Load(order);
-                }
             }
 
             public void Store(ref T value, MemoryOrder order)
             {
                 lock (this)
-                {
                     _atomic.Store(value, order);
-                }
             }
 
             public bool IsLockFree { get { return false; } }
@@ -145,9 +127,7 @@ namespace System.Threading.Atomics
             public T CompareExchange(T value, T comparand)
             {
                 lock (this)
-                {
                     return _atomic.CompareExchange(value, comparand);
-                }
             }
         }
 
