@@ -344,7 +344,7 @@ namespace System.Threading.Atomics
                         Platform.MemoryBarrier();
                         this.AcqRelValue.Int64Value = Platform.reinterpret_cast<T, long>(ref value);
 #else
-                        Interlocked.Exchange(ref AcqRelValue.Int64Value, Platform.reinterpret_cast<T, long>(ref value));
+                        Volatile.Write(ref AcqRelValue.Int64Value, Platform.reinterpret_cast<T, long>(ref value));
 #endif
                         break;
                     case MemoryOrder.SeqCst:
