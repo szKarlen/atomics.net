@@ -60,7 +60,7 @@ namespace System.Threading.Atomics
                     Platform.MemoryBarrier();
                     this._data[index] = value;
 #else
-                    Interlocked.Exchange(ref this._data[index], value);
+                    Volatile.Write(ref this._data[index], value);
 #endif
                     break;
                 case MemoryOrder.SeqCst:
