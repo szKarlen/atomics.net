@@ -9,7 +9,7 @@
 
         public static bool IsSpported(this MemoryOrder order)
         {
-            return !(order < MemoryOrder.Acquire);
+            return order != MemoryOrder.Consume;
         }
 
         public static int ToInt32(this bool target)
