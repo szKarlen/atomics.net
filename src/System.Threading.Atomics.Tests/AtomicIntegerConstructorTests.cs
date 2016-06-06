@@ -12,6 +12,8 @@ namespace System.Threading.Atomics.Tests
         [Fact]
         public void AtomicInteger_MemoryOrder_Should_Fail()
         {
+            Assert.Throws<ArgumentException>(() => new AtomicInteger(MemoryOrder.Acquire));
+            Assert.Throws<ArgumentException>(() => new AtomicInteger(MemoryOrder.Release));
 #pragma warning disable 612, 618
             Assert.Throws<ArgumentException>(() => new AtomicInteger(MemoryOrder.Consume));
 #pragma warning restore 612, 618
@@ -20,8 +22,6 @@ namespace System.Threading.Atomics.Tests
         [Fact]
         public void AtomicInteger_MemoryOrder_Should_Success()
         {
-            GC.KeepAlive(new AtomicInteger(MemoryOrder.Acquire));
-            GC.KeepAlive(new AtomicInteger(MemoryOrder.Release));
             GC.KeepAlive(new AtomicInteger(MemoryOrder.AcqRel));
             GC.KeepAlive(new AtomicInteger(MemoryOrder.SeqCst));
         }
@@ -35,6 +35,8 @@ namespace System.Threading.Atomics.Tests
         [Fact]
         public void AtomicInteger_InitialValue_With_MemoryOrder_Should_Fail()
         {
+            Assert.Throws<ArgumentException>(() => new AtomicInteger(int.MaxValue, MemoryOrder.Acquire));
+            Assert.Throws<ArgumentException>(() => new AtomicInteger(int.MaxValue, MemoryOrder.Release));
 #pragma warning disable 612, 618
             Assert.Throws<ArgumentException>(() => new AtomicInteger(int.MaxValue, MemoryOrder.Consume));
 #pragma warning restore 612, 618
@@ -43,8 +45,6 @@ namespace System.Threading.Atomics.Tests
         [Fact]
         public void AtomicInteger_InitialValue_With_MemoryOrder_Should_Success()
         {
-            GC.KeepAlive(new AtomicInteger(int.MaxValue, MemoryOrder.Acquire));
-            GC.KeepAlive(new AtomicInteger(int.MaxValue, MemoryOrder.Release));
             GC.KeepAlive(new AtomicInteger(int.MaxValue, MemoryOrder.AcqRel));
             GC.KeepAlive(new AtomicInteger(int.MaxValue, MemoryOrder.SeqCst));
         }

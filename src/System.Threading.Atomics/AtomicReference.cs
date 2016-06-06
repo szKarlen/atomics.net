@@ -36,7 +36,7 @@ namespace System.Threading.Atomics
         /// <param name="order">Affects the way store operation occur. Load operations are always use <see cref="MemoryOrder.Acquire"/> semantics</param>
         public AtomicReference(T initialValue, MemoryOrder order = MemoryOrder.AcqRel)
         {
-            if (!order.IsSpported()) throw new ArgumentException(string.Format("{0} is not supported", order.ToString()));
+            order.ThrowIfNotSupported();
 
             _instanceLock = order == MemoryOrder.SeqCst ? new object() : null;
             _order = order;

@@ -34,7 +34,7 @@ namespace System.Threading.Atomics
         /// <param name="order">Affects the way store operation occur. Default is <see cref="MemoryOrder.AcqRel"/> semantics</param>
         public AtomicIntegerArray(int length, MemoryOrder order = MemoryOrder.SeqCst)
         {
-            if (!order.IsSpported()) throw new ArgumentException(string.Format("{0} is not supported", order.ToString()));
+            order.ThrowIfNotSupported();
 
             _data = new int[length];
             _order = order;

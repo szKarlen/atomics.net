@@ -38,7 +38,7 @@ namespace System.Threading.Atomics
         /// <param name="align">True to store the underlying value aligned, otherwise False</param>
         public AtomicLong(long value, MemoryOrder order = MemoryOrder.SeqCst, bool align = false)
         {
-            if (!order.IsSpported()) throw new ArgumentException(string.Format("{0} is not supported", order.ToString()));
+            order.ThrowIfNotSupported();
 
             _order = order;
             if (align)

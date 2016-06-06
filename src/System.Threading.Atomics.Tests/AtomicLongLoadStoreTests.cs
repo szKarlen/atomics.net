@@ -41,7 +41,7 @@ namespace System.Threading.Atomics.Tests
         [MemberData("StoreValues")]
         public void AtomicLong_Store_Should_Success(long initialValue, long storeValue, MemoryOrder order)
         {
-            var atomicLong = new AtomicLong(initialValue, order);
+            var atomicLong = new AtomicLong(initialValue, MemoryOrder.Relaxed);
             atomicLong.Store(storeValue, order);
             Assert.Equal(storeValue, atomicLong.Value);
         }
@@ -58,8 +58,6 @@ namespace System.Threading.Atomics.Tests
         {
             get
             {
-                yield return new object[] { long.MinValue, MemoryOrder.Acquire, true };
-                yield return new object[] { long.MinValue, MemoryOrder.Release, true };
                 yield return new object[] { long.MinValue, MemoryOrder.AcqRel, true };
                 yield return new object[] { long.MinValue, MemoryOrder.SeqCst, true };
             }

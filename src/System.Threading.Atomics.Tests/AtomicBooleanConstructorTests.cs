@@ -12,6 +12,8 @@ namespace System.Threading.Atomics.Tests
         [Fact]
         public void AtomicBoolean_MemoryOrder_Should_Fail()
         {
+            Assert.Throws<ArgumentException>(() => new AtomicBoolean(MemoryOrder.Acquire));
+            Assert.Throws<ArgumentException>(() => new AtomicBoolean(MemoryOrder.Release));
 #pragma warning disable 612, 618
             Assert.Throws<ArgumentException>(() => new AtomicBoolean(MemoryOrder.Consume));
 #pragma warning restore 612, 618
@@ -20,8 +22,6 @@ namespace System.Threading.Atomics.Tests
         [Fact]
         public void AtomicBoolean_MemoryOrder_Should_Success()
         {
-            GC.KeepAlive(new AtomicBoolean(MemoryOrder.Acquire));
-            GC.KeepAlive(new AtomicBoolean(MemoryOrder.Release));
             GC.KeepAlive(new AtomicBoolean(MemoryOrder.AcqRel));
             GC.KeepAlive(new AtomicBoolean(MemoryOrder.SeqCst));
         }
@@ -35,6 +35,8 @@ namespace System.Threading.Atomics.Tests
         [Fact]
         public void AtomicBoolean_InitialValue_With_MemoryOrder_Should_Fail()
         {
+            Assert.Throws<ArgumentException>(() => new AtomicBoolean(true, MemoryOrder.Acquire));
+            Assert.Throws<ArgumentException>(() => new AtomicBoolean(true, MemoryOrder.Release));
 #pragma warning disable 612, 618
             Assert.Throws<ArgumentException>(() => new AtomicBoolean(true, MemoryOrder.Consume));
 #pragma warning restore 612, 618
@@ -43,8 +45,6 @@ namespace System.Threading.Atomics.Tests
         [Fact]
         public void AtomicBoolean_InitialValue_With_MemoryOrder_Should_Success()
         {
-            GC.KeepAlive(new AtomicBoolean(true, MemoryOrder.Acquire));
-            GC.KeepAlive(new AtomicBoolean(true, MemoryOrder.Release));
             GC.KeepAlive(new AtomicBoolean(true, MemoryOrder.AcqRel));
             GC.KeepAlive(new AtomicBoolean(true, MemoryOrder.SeqCst));
         }
