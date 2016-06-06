@@ -25,9 +25,16 @@ namespace System.Threading.Atomics
         /// <param name="source">The array to copy elements from</param>
         /// <param name="order">Affects the way store operation occur. Default is <see cref="MemoryOrder.AcqRel"/> semantics</param>
         public AtomicReferenceArray(T[] source, MemoryOrder order = MemoryOrder.SeqCst)
-            : this(source.Length, order)
         {
+            if (source == null) throw new ArgumentNullException("source");
+            order.ThrowIfNotSupported();
+
+            _data = new T[source.Length];
+            _order = order;
+
             source.CopyTo(_data, 0);
+
+            _instanceLock = order == MemoryOrder.SeqCst ? new object() : null;
         }
 
         /// <summary>
@@ -37,7 +44,8 @@ namespace System.Threading.Atomics
         /// <param name="order">Affects the way store operation occur. Default is <see cref="MemoryOrder.AcqRel"/> semantics</param>
         public AtomicReferenceArray(int length, MemoryOrder order = MemoryOrder.SeqCst)
         {
-            if (!order.IsSpported()) throw new ArgumentException(string.Format("{0} is not supported", order.ToString()));
+            if (length < 0) throw new ArgumentException("Length can't be negative");
+            order.ThrowIfNotSupported();
 
             _data = new T[length];
             _order = order;
