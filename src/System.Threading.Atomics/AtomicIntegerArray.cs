@@ -160,12 +160,15 @@ namespace System.Threading.Atomics
 
         public IEnumerator<int> GetEnumerator()
         {
-            return ((IEnumerable<int>)_data).GetEnumerator();
+            for (int i = 0; i < _data.Length; i++)
+            {
+                yield return Load(i, _order);
+            }
         }
 
         Collections.IEnumerator Collections.IEnumerable.GetEnumerator()
         {
-            return _data.GetEnumerator();
+            return GetEnumerator();
         }
     }
 }
