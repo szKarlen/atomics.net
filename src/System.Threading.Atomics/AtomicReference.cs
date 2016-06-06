@@ -204,7 +204,13 @@ namespace System.Threading.Atomics
                 case MemoryOrder.AcqRel:
                     return this._value;
                 case MemoryOrder.SeqCst:
-                    return Volatile.Read(ref _value);
+#if ARM_CPU
+                    var tmp = _storage.Slot.AcqRelValue;
+                    Platform.MemoryBarrier();
+                    return tmp;
+#else
+                    return this._value;
+#endif
                 default:
                     throw new ArgumentOutOfRangeException("order");
             }
