@@ -22,8 +22,13 @@ namespace System.Threading.Atomics
         /// <param name="source">The array to copy elements from</param>
         /// <param name="order">Affects the way store operation occur. Default is <see cref="MemoryOrder.AcqRel"/> semantics</param>
         public AtomicIntegerArray(int[] source, MemoryOrder order = MemoryOrder.SeqCst)
-            : this(source.Length)
         {
+            if (source == null) throw new ArgumentNullException("source");
+            order.ThrowIfNotSupported();
+
+            _data = new int[source.Length];
+            _order = order;
+
             source.CopyTo(_data, 0);
         }
 
@@ -34,6 +39,7 @@ namespace System.Threading.Atomics
         /// <param name="order">Affects the way store operation occur. Default is <see cref="MemoryOrder.AcqRel"/> semantics</param>
         public AtomicIntegerArray(int length, MemoryOrder order = MemoryOrder.SeqCst)
         {
+            if (length < 0) throw new ArgumentException("Length can't be negative");
             order.ThrowIfNotSupported();
 
             _data = new int[length];
