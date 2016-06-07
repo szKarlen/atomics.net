@@ -67,6 +67,7 @@
     <Compile Include="AtomicLoadStoreTests.cs" />
     <Compile Include="AtomicLongLoadStoreTests.cs" />
     <Compile Include="AtomicIntegerLoadStoreTests.cs" />
+    <Compile Include="AtomicReferenceArrayConstructorTests.cs" />
     <Compile Include="AtomicReferenceEqualityTests.cs" />
     <Compile Include="AtomicReferenceConstructorTests.cs" />
     <Compile Include="AtomicBooleanConstructorTests.cs" />
