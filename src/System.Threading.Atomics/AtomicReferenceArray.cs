@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -12,7 +13,10 @@ namespace System.Threading.Atomics
     /// An <see cref="T"/> array wrapper with atomic operations
     /// </summary>
     [DebuggerDisplay("Count = {Count}")]
-    public class AtomicReferenceArray<T> : IReadOnlyCollection<T> where T : class
+    public class AtomicReferenceArray<T> : ICollection<T>,
+        IReadOnlyCollection<T>,
+        IStructuralComparable,
+        IStructuralEquatable where T : class
     {
         private readonly T[] _data;
         private readonly MemoryOrder _order;
@@ -152,7 +156,7 @@ namespace System.Threading.Atomics
         }
 
         /// <summary>
-        /// Sets atomically current <see cref="Value"/> by provided setter method
+        /// Atomically sets the item at zero-based index (<paramref name="index"/>) to the given value by provided setter method and return the old value
         /// </summary>
         /// <param name="index">The index of element at which to store</param>
         /// <param name="setter">The setter to use</param>
@@ -182,7 +186,7 @@ namespace System.Threading.Atomics
         }
 
         /// <summary>
-        /// Sets atomically current <see cref="Value"/> by provided setter method
+        /// Atomically sets the item at zero-based index (<paramref name="index"/>) to the given value by provided setter method and return the old value
         /// </summary>
         /// <param name="index">The index of element at which to store</param>
         /// <param name="setter">The setter to use</param>
@@ -225,7 +229,7 @@ namespace System.Threading.Atomics
         }
 
         /// <summary>
-        /// Sets atomically current <see cref="Value"/> by provided setter method
+        /// Atomically sets the item at zero-based index (<paramref name="index"/>) to the given value by provided setter method and return the old value
         /// </summary>
         /// <param name="index">The index of element at which to store</param>
         /// <param name="setter">The setter to use</param>
@@ -237,11 +241,19 @@ namespace System.Threading.Atomics
             return Set(index, setter, data, this._order);
         }
 
+        /// <summary>
+        /// Gets the number of elements contained in the <see cref="AtomicReference{T}"/>.
+        /// </summary>
+        /// <value>The number of elements contained in the <see cref="AtomicReference{T}"/>.</value>
         public int Count
         {
             get { return _data.Length; }
         }
 
+        /// <summary>
+        /// Returns an enumerator that iterates through the collection.
+        /// </summary>
+        /// <returns>An enumerator that can be used to iterate through the collection.</returns>
         public IEnumerator<T> GetEnumerator()
         {
             for (int i = 0; i < _data.Length; i++)
@@ -250,9 +262,71 @@ namespace System.Threading.Atomics
             }
         }
 
-        Collections.IEnumerator Collections.IEnumerable.GetEnumerator()
+        IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
+        }
+
+        void ICollection<T>.Add(T item)
+        {
+            throw new NotSupportedException("Collection is of a fixed size");
+        }
+
+        void ICollection<T>.Clear()
+        {
+            throw new NotSupportedException("Collection is of a fixed size");
+        }
+
+        /// <summary>
+        /// Determines whether the <see cref="AtomicReference{T}"/> contains a specific value.
+        /// </summary>
+        /// <param name="item">The object to locate in the <see cref="AtomicReference{T}"/>.</param>
+        /// <returns>true if item is found in the <see cref="AtomicReference{T}"/>; otherwise, false.</returns>
+        public bool Contains(T item)
+        {
+            foreach (var i in _data)
+            {
+                if (i == item)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Copies the elements of the <see cref="AtomicReference{T}"/> to an <see cref="Array"/>, starting at a particular <see cref="Array"/> index.
+        /// </summary>
+        /// <param name="array">The one-dimensional <see cref="Array"/> that is the destination of the elements copied from <see cref="AtomicReference{T}"/>. The <see cref="Array"/> must have zero-based indexing.</param>
+        /// <param name="arrayIndex">The zero-based index in array at which copying begins.</param>
+        public void CopyTo(T[] array, int arrayIndex)
+        {
+            _data.CopyTo(array, arrayIndex);
+        }
+
+        bool ICollection<T>.IsReadOnly
+        {
+            get { return false; }
+        }
+
+        bool ICollection<T>.Remove(T item)
+        {
+            throw new NotSupportedException("Collection is of a fixed size");
+        }
+
+        int IStructuralComparable.CompareTo(object other, IComparer comparer)
+        {
+            return ((IStructuralComparable)_data).CompareTo(other, comparer);
+        }
+
+        bool IStructuralEquatable.Equals(object other, IEqualityComparer comparer)
+        {
+            return ((IStructuralEquatable)_data).Equals(other, comparer);
+        }
+
+        int IStructuralEquatable.GetHashCode(IEqualityComparer comparer)
+        {
+            return ((IStructuralEquatable)_data).GetHashCode(comparer);
         }
     }
 }

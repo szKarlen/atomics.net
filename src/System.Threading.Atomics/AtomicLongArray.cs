@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 
@@ -7,7 +8,11 @@ namespace System.Threading.Atomics
     /// An <see cref="long"/> array wrapper with atomic operations
     /// </summary>
     [DebuggerDisplay("Count = {Count}")]
-    public class AtomicLongArray : IAtomicRefArray<long>, IReadOnlyCollection<long>
+    public class AtomicLongArray : IAtomicRefArray<long>,
+        ICollection<long>,
+        IReadOnlyCollection<long>,
+        IStructuralComparable,
+        IStructuralEquatable
     {
         private readonly long[] _data;
         private readonly MemoryOrder _order;
@@ -193,6 +198,58 @@ namespace System.Threading.Atomics
         public long DecrementAt(int index)
         {
             return Interlocked.Decrement(ref _data[index]);
+        }
+
+        void ICollection<long>.Add(long item)
+        {
+            throw new NotSupportedException("Collection is of a fixed size");
+        }
+
+        void ICollection<long>.Clear()
+        {
+            throw new NotSupportedException("Collection is of a fixed size");
+        }
+
+        public bool Contains(long item)
+        {
+            foreach (var i in _data)
+            {
+                if (i == item)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public void CopyTo(long[] array, int arrayIndex)
+        {
+            _data.CopyTo(array, arrayIndex);
+        }
+
+        bool ICollection<long>.IsReadOnly
+        {
+            get { return false; }
+        }
+
+        bool ICollection<long>.Remove(long item)
+        {
+            throw new NotSupportedException("Collection is of a fixed size");
+        }
+
+        int IStructuralComparable.CompareTo(object other, IComparer comparer)
+        {
+            return ((IStructuralComparable)_data).CompareTo(other, comparer);
+        }
+
+        bool IStructuralEquatable.Equals(object other, IEqualityComparer comparer)
+        {
+            return ((IStructuralEquatable)_data).Equals(other, comparer);
+        }
+
+        int IStructuralEquatable.GetHashCode(IEqualityComparer comparer)
+        {
+            return ((IStructuralEquatable)_data).GetHashCode(comparer);
         }
     }
 }

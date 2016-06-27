@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -11,7 +12,11 @@ namespace System.Threading.Atomics
     /// An <see cref="int"/> array wrapper with atomic operations
     /// </summary>
     [DebuggerDisplay("Count = {Count}")]
-    public class AtomicIntegerArray : IAtomicRefArray<int>, IReadOnlyCollection<int>
+    public class AtomicIntegerArray : IAtomicRefArray<int>, 
+        ICollection<int>, 
+        IReadOnlyCollection<int>, 
+        IStructuralComparable, 
+        IStructuralEquatable
     {
         private readonly int[] _data;
         private readonly MemoryOrder _order;
@@ -159,11 +164,19 @@ namespace System.Threading.Atomics
             return Interlocked.CompareExchange(ref this._data[index], value, comparand);
         }
 
+        /// <summary>
+        /// Gets the number of elements contained in the <see cref="AtomicIntegerArray"/>.
+        /// </summary>
+        /// <value>The number of elements contained in the <see cref="AtomicIntegerArray"/>.</value>
         public int Count
         {
             get { return _data.Length; }
         }
 
+        /// <summary>
+        /// Returns an enumerator that iterates through the collection.
+        /// </summary>
+        /// <returns>An enumerator that can be used to iterate through the collection.</returns>
         public IEnumerator<int> GetEnumerator()
         {
             for (int i = 0; i < _data.Length; i++)
@@ -172,7 +185,7 @@ namespace System.Threading.Atomics
             }
         }
 
-        Collections.IEnumerator Collections.IEnumerable.GetEnumerator()
+        IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
         }
@@ -195,6 +208,68 @@ namespace System.Threading.Atomics
         public int DecrementAt(int index)
         {
             return Interlocked.Decrement(ref _data[index]);
+        }
+
+        void ICollection<int>.Add(int item)
+        {
+            throw new NotSupportedException("Collection is of a fixed size");
+        }
+
+        void ICollection<int>.Clear()
+        {
+            throw new NotSupportedException("Collection is of a fixed size");
+        }
+
+        /// <summary>
+        /// Determines whether the <see cref="AtomicIntegerArray"/> contains a specific value.
+        /// </summary>
+        /// <param name="item">The value to locate in the <see cref="AtomicReference{T}"/>.</param>
+        /// <returns>true if item is found in the <see cref="AtomicIntegerArray"/>; otherwise, false.</returns>
+        public bool Contains(int item)
+        {
+            foreach (var i in _data)
+            {
+                if (i == item)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Copies the elements of the <see cref="AtomicIntegerArray"/> to an <see cref="Array"/>, starting at a particular <see cref="Array"/> index.
+        /// </summary>
+        /// <param name="array">The one-dimensional <see cref="Array"/> that is the destination of the elements copied from <see cref="AtomicIntegerArray"/>. The <see cref="Array"/> must have zero-based indexing.</param>
+        /// <param name="arrayIndex">The zero-based index in array at which copying begins.</param>
+        public void CopyTo(int[] array, int arrayIndex)
+        {
+            _data.CopyTo(array, arrayIndex);
+        }
+
+        bool ICollection<int>.IsReadOnly
+        {
+            get { return false; }
+        }
+
+        bool ICollection<int>.Remove(int item)
+        {
+            throw new NotSupportedException("Collection is of a fixed size");
+        }
+
+        int IStructuralComparable.CompareTo(object other, IComparer comparer)
+        {
+            return ((IStructuralComparable) _data).CompareTo(other, comparer);
+        }
+
+        bool IStructuralEquatable.Equals(object other, IEqualityComparer comparer)
+        {
+            return ((IStructuralEquatable)_data).Equals(other, comparer);
+        }
+
+        int IStructuralEquatable.GetHashCode(IEqualityComparer comparer)
+        {
+            return ((IStructuralEquatable) _data).GetHashCode(comparer);
         }
     }
 }
