@@ -41,7 +41,7 @@ namespace System.Threading.Atomics
         /// <param name="align">True to store the underlying value aligned, otherwise False</param>
         public Atomic(T value, MemoryOrder order = MemoryOrder.SeqCst, bool align = false)
         {
-            if (!order.IsSpported()) throw new ArgumentException(string.Format("{0} is not supported", order.ToString()));
+            order.ThrowIfNotSupported();
 
             _storage = GetStorage(order, align);
 
@@ -100,44 +100,26 @@ namespace System.Threading.Atomics
 
             public T Value
             {
-                get
-                {
-                    lock (this)
-                    {
-                        return _atomic.Value;
-                    }
-                }
-                set
-                {
-                    lock (this)
-                    {
-                        _atomic.Value = value;
-                    }
-                }
+                get { lock (this) return _atomic.Value; }
+                set { lock (this) _atomic.Value = value; }
             }
 
             public void Store(T value, MemoryOrder order)
             {
                 lock (this)
-                {
                     _atomic.Store(value, order);
-                }
             }
 
             public T Load(MemoryOrder order)
             {
                 lock (this)
-                {
                     return _atomic.Load(order);
-                }
             }
 
             public void Store(ref T value, MemoryOrder order)
             {
                 lock (this)
-                {
                     _atomic.Store(value, order);
-                }
             }
 
             public bool IsLockFree { get { return false; } }
@@ -145,9 +127,7 @@ namespace System.Threading.Atomics
             public T CompareExchange(T value, T comparand)
             {
                 lock (this)
-                {
                     return _atomic.CompareExchange(value, comparand);
-                }
             }
         }
 
@@ -364,7 +344,7 @@ namespace System.Threading.Atomics
                         Platform.MemoryBarrier();
                         this.AcqRelValue.Int64Value = Platform.reinterpret_cast<T, long>(ref value);
 #else
-                        Interlocked.Exchange(ref AcqRelValue.Int64Value, Platform.reinterpret_cast<T, long>(ref value));
+                        Volatile.Write(ref AcqRelValue.Int64Value, Platform.reinterpret_cast<T, long>(ref value));
 #endif
                         break;
                     case MemoryOrder.SeqCst:

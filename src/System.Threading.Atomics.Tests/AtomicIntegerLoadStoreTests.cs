@@ -41,7 +41,7 @@ namespace System.Threading.Atomics.Tests
         [MemberData("StoreValues")]
         public void AtomicInteger_Store_Should_Success(int initialValue, int storeValue, MemoryOrder order)
         {
-            var atomicInteger = new AtomicInteger(initialValue, order);
+            var atomicInteger = new AtomicInteger(initialValue, MemoryOrder.Relaxed);
             atomicInteger.Store(storeValue, order);
             Assert.Equal(storeValue, atomicInteger.Value);
         }
@@ -58,8 +58,6 @@ namespace System.Threading.Atomics.Tests
         {
             get
             {
-                yield return new object[] { int.MinValue, MemoryOrder.Acquire, true };
-                yield return new object[] { int.MinValue, MemoryOrder.Release, true };
                 yield return new object[] { int.MinValue, MemoryOrder.AcqRel, true };
                 yield return new object[] { int.MinValue, MemoryOrder.SeqCst, true };
             }

@@ -14,8 +14,9 @@ namespace System.Threading.Atomics.Tests
         [Fact]
         public void Atomic_MemoryOrder_Should_Fail()
         {
+            Assert.Throws<ArgumentException>(() => new Atomic<Guid>(MemoryOrder.Acquire));
+            Assert.Throws<ArgumentException>(() => new Atomic<Guid>(MemoryOrder.Release));
 #pragma warning disable 612, 618
-            Assert.Throws<ArgumentException>(() => new Atomic<Guid>(MemoryOrder.Relaxed));
             Assert.Throws<ArgumentException>(() => new Atomic<Guid>(MemoryOrder.Consume));
 #pragma warning restore 612, 618
         }
@@ -23,8 +24,6 @@ namespace System.Threading.Atomics.Tests
         [Fact]
         public void Atomic_MemoryOrder_Should_Success()
         {
-            GC.KeepAlive(new Atomic<Guid>(MemoryOrder.Acquire));
-            GC.KeepAlive(new Atomic<Guid>(MemoryOrder.Release));
             GC.KeepAlive(new Atomic<Guid>(MemoryOrder.AcqRel));
             GC.KeepAlive(new Atomic<Guid>(MemoryOrder.SeqCst));
         }
@@ -38,8 +37,9 @@ namespace System.Threading.Atomics.Tests
         [Fact]
         public void Atomic_InitialValue_With_MemoryOrder_Should_Fail()
         {
+            Assert.Throws<ArgumentException>(() => new Atomic<Guid>(SessionValue, MemoryOrder.Acquire));
+            Assert.Throws<ArgumentException>(() => new Atomic<Guid>(SessionValue, MemoryOrder.Release));
 #pragma warning disable 612, 618
-            Assert.Throws<ArgumentException>(() => new Atomic<Guid>(SessionValue, MemoryOrder.Relaxed));
             Assert.Throws<ArgumentException>(() => new Atomic<Guid>(SessionValue, MemoryOrder.Consume));
 #pragma warning restore 612, 618
         }
@@ -47,8 +47,6 @@ namespace System.Threading.Atomics.Tests
         [Fact]
         public void Atomic_InitialValue_With_MemoryOrder_Should_Success()
         {
-            GC.KeepAlive(new Atomic<Guid>(SessionValue, MemoryOrder.Acquire));
-            GC.KeepAlive(new Atomic<Guid>(SessionValue, MemoryOrder.Release));
             GC.KeepAlive(new Atomic<Guid>(SessionValue, MemoryOrder.AcqRel));
             GC.KeepAlive(new Atomic<Guid>(SessionValue, MemoryOrder.SeqCst));
         }
