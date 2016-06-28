@@ -71,13 +71,13 @@ namespace System.Threading.Atomics
                     throw new InvalidOperationException("Cannot set (store) value with Acquire semantics");
                 case MemoryOrder.Release:
                 case MemoryOrder.AcqRel:
-#if ARM_CPU || ITANIUM_CPU
+#if ARM_CPU
                     Platform.MemoryBarrier();
 #endif
                     this._data[index] = value;
                     break;
                 case MemoryOrder.SeqCst:
-#if ARM_CPU || ITANIUM_CPU
+#if ARM_CPU
                     Platform.MemoryBarrier();
                     this._data[index] = value;
                     Platform.MemoryBarrier();
@@ -132,7 +132,7 @@ namespace System.Threading.Atomics
                 case MemoryOrder.Acquire:
                 case MemoryOrder.AcqRel:
                 case MemoryOrder.SeqCst:
-#if ARM_CPU || ITANIUM_CPU
+#if ARM_CPU
                     var tmp = this._data[index];
                     Platform.MemoryBarrier();
                     return tmp;

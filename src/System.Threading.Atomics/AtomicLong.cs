@@ -147,7 +147,7 @@ namespace System.Threading.Atomics
                     throw new InvalidOperationException("Cannot set (store) value with Acquire semantics");
                 case MemoryOrder.Release:
                 case MemoryOrder.AcqRel:
-#if ARM_CPU || ITANIUM_CPU
+#if ARM_CPU
                     Platform.MemoryBarrier();
                     _storage.Slot.AcqRelValue = value;
 #else
@@ -155,7 +155,7 @@ namespace System.Threading.Atomics
 #endif
                     break;
                 case MemoryOrder.SeqCst:
-#if ARM_CPU || ITANIUM_CPU
+#if ARM_CPU
                     Platform.MemoryBarrier();
                     _storage.Slot.AcqRelValue = value;
                     Platform.MemoryBarrier();

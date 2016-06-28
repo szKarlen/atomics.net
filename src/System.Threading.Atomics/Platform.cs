@@ -43,7 +43,7 @@ namespace System.Threading.Atomics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T ReadSeqCst<T>(ref T location)
         {
-#if ARM_CPU || ITANIUM_CPU
+#if ARM_CPU
             var tmp = location;
             MemoryBarrier();
             return tmp;
@@ -73,7 +73,7 @@ namespace System.Threading.Atomics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteRelease<T>(ref T location, ref T value)
         {
-#if ARM_CPU || ITANIUM_CPU
+#if ARM_CPU
             MemoryBarrier();
 #endif
             location = value;
@@ -90,7 +90,7 @@ namespace System.Threading.Atomics
         {
             MemoryBarrier();
             location = value;
-#if ARM_CPU || ITANIUM_CPU
+#if ARM_CPU
             MemoryBarrier();
 #endif
         }
