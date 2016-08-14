@@ -6,15 +6,13 @@ For more detailed description of terms, please refer to [glossary](glossary.md).
 atomics.net design and implementation
 -------
 
-Project aims to be very close to C++ 11 standard atomics by design and provides [memory order](http://en.cppreference.com/w/cpp/atomic/memory_order) flags for primitives. Some of them are prohibited and not supported. For example, the `Relaxed` flag from C++ 11 compatible is marked as obsolete with compiler warning. `Consume` flag results into exception at runtime.
+Project aims to be very close to C++ 11 standard atomics by design and usage. For example, the [memory order](http://en.cppreference.com/w/cpp/atomic/memory_order) semantics is supported.
 
-Although the library is a PCL itself, the minimum required version of .NET - 4.5. But you can compile for .NET 4.0 and earlier. The Itanium-related stuff (reorderings, barrier/fences usages, etc.) will be present (discussed a little bit later [below](#itanium)).
+Although the library is a PCL itself, the minimum required version of .NET is 4.5. It is possible to compile and use for .NET 4.0 and earlier. ARM-related stuff (volatile reads with proper memory barriers usages, etc.) will be present by using ARM_CPU directive (see [docs](Documentation/memorymodel101.md)).
 
-For ECMA MM implementations of CLI on ARM architecture the conditional compilation is supported by using ARM_CPU directive.
+The default memory order semantics for the library's primitives (like `Atomic<T>`, etc.) is `MemoryOrder.SeqCst`, whereas `AtomicReference<T>` uses `MemoryOrder.AcqRel`, which fits very well with CAS approach and CLR 2.0 memory model.
 
-The default memory semantics for the library's primitives (like `Atomic<T>`, etc.) is `MemoryOrder.SeqCst`, whereas `AtomicReference<T>` uses `MemoryOrder.AcqRel`, which fits very well with CAS approach and CLR 2.0 memory model.
-
-The option for sequential consistency (i.e. `SeqCst`) is implemented by using intrinsic functions (with compilation to proper CPU instruction) or a combination of Acquire/Release with sequential order emulation through exclusion locks, when atomic read/writes to particular POD are not supported by HW.
+The option for sequential consistency (i.e. `SeqCst`) is implemented by using intrinsic functions (with compilation to proper CPU instruction) or a combination of Acquire/Release with sequential order emulation through exclusion locks, when atomic reads/writes to particular POD are not supported by HW.
 
 Specifying Acquire only or Release only flag falls back to full Acquire/Release semantics for get/set operations or combinations of.
 
