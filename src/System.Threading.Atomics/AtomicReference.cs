@@ -205,7 +205,7 @@ namespace System.Threading.Atomics
                     return this._value;
                 case MemoryOrder.SeqCst:
 #if ARM_CPU
-                    var tmp = _storage.Slot.AcqRelValue;
+                    var tmp = this._value;
                     Platform.MemoryBarrier();
                     return tmp;
 #else

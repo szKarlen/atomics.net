@@ -131,7 +131,7 @@ namespace System.Threading.Atomics
                 case MemoryOrder.AcqRel:
                 case MemoryOrder.SeqCst:
 #if ARM_CPU
-                    var tmp = _storage.Slot.AcqRelValue;
+                    var tmp = this._data[index];
                     Platform.MemoryBarrier();
                     return tmp;
 #else
