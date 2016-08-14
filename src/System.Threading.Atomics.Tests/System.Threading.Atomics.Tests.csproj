@@ -60,12 +60,19 @@
     <Otherwise />
   </Choose>
   <ItemGroup>
+    <Compile Include="AlignedIntegerTests.cs" />
     <Compile Include="AtomicEqualityTests.cs" />
     <Compile Include="AtomicConstructorTests.cs" />
     <Compile Include="AtomicBooleanLoadStoreTests.cs" />
+    <Compile Include="AtomicReferenceArrayLoadStoreTests.cs" />
+    <Compile Include="AtomicLongArrayLoadStoreTests.cs" />
+    <Compile Include="AtomicLongArrayConstructorTests.cs" />
+    <Compile Include="AtomicIntegerArrayLoadStoreTests.cs" />
     <Compile Include="AtomicLoadStoreTests.cs" />
     <Compile Include="AtomicLongLoadStoreTests.cs" />
     <Compile Include="AtomicIntegerLoadStoreTests.cs" />
+    <Compile Include="AtomicIntegerArrayConstructorTests.cs" />
+    <Compile Include="AtomicReferenceArrayConstructorTests.cs" />
     <Compile Include="AtomicReferenceEqualityTests.cs" />
     <Compile Include="AtomicReferenceConstructorTests.cs" />
     <Compile Include="AtomicBooleanConstructorTests.cs" />

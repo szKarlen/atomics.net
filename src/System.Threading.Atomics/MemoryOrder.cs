@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace System.Threading.Atomics
+﻿namespace System.Threading.Atomics
 {
     /// <summary>
     /// Specifies how regular, non-atomic memory accesses are to be ordered around an atomic operation
@@ -15,7 +9,6 @@ namespace System.Threading.Atomics
         /// <summary>
         /// Relaxed operation: there are no synchronization or ordering constraints, only atomicity is required of this operation.
         /// </summary>
-        [Obsolete("CLR JIT on Itanium does emit ST.REL for non-volatile writes.")]
         Relaxed,
         
         /// <summary>

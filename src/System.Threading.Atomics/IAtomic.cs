@@ -1,6 +1,6 @@
 ﻿namespace System.Threading.Atomics
 {
-    interface IAtomic<T> : IAtomicOperators<T> where T : struct
+    interface IAtomic<T> where T : struct
     {
         /// <summary>
         /// Gets or sets atomically the underlying value
@@ -43,5 +43,10 @@
         /// <param name="value">The value to store</param>
         /// <param name="order">The <see cref="MemoryOrder"/> to achieve</param>
         void Store(ref T value, MemoryOrder order);
+    }
+
+    interface IAtomicCASProvider<TType> where TType : struct, IEquatable<TType>
+    {
+        TType CompareExchange(TType value, TType comparand);
     }
 }

@@ -37,3 +37,11 @@ namespace System.Threading.Atomics
     
 #endif
 }
+
+namespace System
+{
+    public struct TypedReference
+    {
+
+    }
+}

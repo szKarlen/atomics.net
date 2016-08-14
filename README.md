@@ -1,6 +1,6 @@
 # atomics.net
 
-[![Build status](https://ci.appveyor.com/api/projects/status/wnh7fat3oqas0wer?svg=true)](https://ci.appveyor.com/project/szKarlen/atomics-net) [![NuGet](https://img.shields.io/nuget/v/System.Threading.Atomics.svg?style=flat)](http://www.nuget.org/profiles/Karlen)
+[![Build status](https://ci.appveyor.com/api/projects/status/wnh7fat3oqas0wer?svg=true)](https://ci.appveyor.com/project/szKarlen/atomics-net) [![NuGet](https://img.shields.io/nuget/v/System.Threading.Atomics.svg?style=flat)](http://www.nuget.org/packages/System.Threading.Atomics/)
 
 This package enables .NET projects to use atomic primitives.
 
@@ -9,15 +9,11 @@ Design and implementation
 
 Project aims to be very close to C++ 11 standard atomics by design and usage. For example, the [memory order](http://en.cppreference.com/w/cpp/atomic/memory_order) semantics is supported.
 
-Although the library is a PCL itself, the minimum required version of .NET is 4.5. But you can compile for .NET 4.0 and earlier. The Itanium-related stuff as well as ARM ones (volatile reads with proper memory barriers usages, etc.) will be present by using ITANIUM_CPU or ARM_CPU directives respectively (see [docs](Documentation/memorymodel101.md)).
+Although the library is a PCL itself, the minimum required version of .NET is 4.5. It is possible to compile and use for .NET 4.0 and earlier. ARM-related stuff (volatile reads with proper memory barriers usages, etc.) will be present by using ARM_CPU directive (see [docs](Documentation/memorymodel101.md)).
 
-For ECMA MM implementations of CLI on ARM architecture the conditional compilation is supported by using ARM_CPU directive.
-
-The default memory semantics for the library's primitives (like `Atomic<T>`, etc.) is `MemoryOrder.SeqCst`, whereas `AtomicReference<T>` uses `MemoryOrder.AcqRel`, which fits very well with CAS approach and CLR 2.0 memory model.
+The default memory order semantics for the library's primitives (like `Atomic<T>`, etc.) is `MemoryOrder.SeqCst`, whereas `AtomicReference<T>` uses `MemoryOrder.AcqRel`, which fits very well with CAS approach and CLR 2.0 memory model.
 
 The option for sequential consistency (i.e. `SeqCst`) is implemented by using intrinsic functions (with compilation to proper CPU instruction) or a combination of Acquire/Release with sequential order emulation through exclusion locks, when atomic reads/writes to particular POD are not supported by HW.
-
-Specifying Acquire only or Release only flag falls back to full Acquire/Release semantics for get/set operations or combinations of.
 
 Atomic primitives
 -------
@@ -27,22 +23,25 @@ Atomic primitives
 * `AtomicInteger`
 * `AtomicLong`
 * `AtomicBoolean`
+* `AtomicReferenceArray`
+* `AtomicIntegerArray`
+* `AtomicLongArray`
 
 Supported types and operations
 -------
-Reads/writes operations on references are provided by `AtomicReference<T>`.
-The `Atomic<T>` class should be used for structs (i.e. value types), including (`char`, `byte`, etc.).
+Reads/writes operations for reference types are provided by `AtomicReference<T>`.
+The `Atomic<T>` type should be used for structs (i.e. value types), including (`char`, `byte`, etc.).
 
-`AtomicInteger` and `AtomicLong` classes has support for `+, -, *, /, ++, --` operators with atomicity guarantees.
+`AtomicInteger` and `AtomicLong` types have support for `+, -, *, /, ++, --` operators with atomicity guarantees.
 
 All primitives implement the implicit conversion operator overload with atomic access.
 
-Integers ranging from 8 to 64 bit are supported as well as unsigned ones.
+Integers ranging from 8 to 64 bits are supported as well as unsigned ones.
 
 False Sharing
 -------
 
-`AtomicInteger` and `AtomicLong` classes has support for memory alignment alongside modern CPU's cache lines. Use flag `align` in constructors of either `Atomic<T>`, `AtomicInteger`, `AtomicLong` or `AtomicBoolean`. Only specializations of `Atomic<T>` with Int32, Int64 and Boolean has effect.
+`AtomicInteger` and `AtomicLong` types has support for memory alignment alongside modern CPU's cache lines. Use flag `align` in constructors of either `Atomic<T>`, `AtomicInteger`, `AtomicLong` or `AtomicBoolean`. Only specializations of `Atomic<T>` with `Int32`, `Int64` and `Boolean` have effect.
 
 Sample usage
 -------
@@ -83,9 +82,9 @@ class Counter
 Notes for usage
 -------
 
-`Atomic<T>` with `Int32`, `Int64` and `Boolean` specialization falls back to using `AtomicInteger`, `AtomicLong` and `AtomicBoolean` as internal storage respectively.
+`Atomic<T>` with `Int32`, `Int64` and `Boolean` specialization fallbacks to `AtomicInteger`, `AtomicLong` and `AtomicBoolean` usage as internal storage respectively.
 
-The memory order flag as well as alignment transfers to internal storage.
+The memory ordering flag as well as alignment transfers to internal storage.
 
 Lock-free stack 101
 -------
@@ -157,14 +156,6 @@ Usually **compare-and-swap (CAS)** is used in lock-free algorithms to maintain t
 Provided by the .NET Framework [`Interlocked.CompareExchange`](https://msdn.microsoft.com/ru-ru/library/system.threading.interlocked.compareexchange(v=vs.110).aspx) method is the C++ [`compare_and_exchange_strong`](http://en.cppreference.com/w/cpp/atomic/atomic/compare_exchange) analog. The `compare_exchange_weak` is not supported.
 
 Current implementation of atomics.net uses CAS approach for lock-free atomic operations (the `Atomic<T>.Value` property uses CAS for setter in Acquire/Release mode.
-
-Roadmap
--------
-
-The following primitives are expected to be included in upcoming release
-* `AtomicReferenceArray<T>`
-* `AtomicIntegerArray`
-* `AtomicLongArray`
 
 Contributing
 -------

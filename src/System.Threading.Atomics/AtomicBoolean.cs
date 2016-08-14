@@ -98,23 +98,6 @@ namespace System.Threading.Atomics
             return this.Value ? bool.TrueString : bool.FalseString;
         }
 
-        bool IAtomicOperators<bool>.CompareExchange(ref bool location1, bool value, bool comparand)
-        {
-            int intValue = value.ToInt32();
-            int intComparand = comparand.ToInt32();
-            while (true)
-            {
-                bool temp = location1;
-                int location = temp.ToInt32();
-                int result = Interlocked.CompareExchange(ref location, intValue, intComparand);
-                if (result == location1.ToInt32())
-                {
-                    location1 = value;
-                    return temp;
-                }
-            }
-        }
-
         /// <summary>
         /// Defines an implicit conversion of a <see cref="AtomicBoolean"/> to a boolean.
         /// </summary>
@@ -197,11 +180,6 @@ namespace System.Threading.Atomics
         public bool Equals(AtomicBoolean other)
         {
             return (!ReferenceEquals(other, null) && (ReferenceEquals(this, other) || this.Value == other.Value));
-        }
-
-        bool IAtomicOperators<bool>.Supports<TType>()
-        {
-            return typeof (TType) == typeof (bool);
         }
     }
 }

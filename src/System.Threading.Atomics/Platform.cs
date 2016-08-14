@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 #if NET40
 using Interlocked = System.Threading.Thread;
 #endif
@@ -7,6 +8,8 @@ namespace System.Threading.Atomics
 {
     public static class Platform
     {
+        public const int CacheLineSize = 64;
+
         /// <summary>
         /// Reads value from provided <paramref name="location"/> without any synchronization
         /// </summary>
@@ -40,7 +43,7 @@ namespace System.Threading.Atomics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T ReadSeqCst<T>(ref T location)
         {
-#if ARM_CPU || ITANIUM_CPU
+#if ARM_CPU
             var tmp = location;
             MemoryBarrier();
             return tmp;
@@ -70,7 +73,7 @@ namespace System.Threading.Atomics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteRelease<T>(ref T location, ref T value)
         {
-#if ARM_CPU || ITANIUM_CPU
+#if ARM_CPU
             MemoryBarrier();
 #endif
             location = value;
@@ -87,7 +90,7 @@ namespace System.Threading.Atomics
         {
             MemoryBarrier();
             location = value;
-#if ARM_CPU || ITANIUM_CPU
+#if ARM_CPU
             MemoryBarrier();
 #endif
         }
@@ -100,6 +103,41 @@ namespace System.Threading.Atomics
 #else
             Interlocked.MemoryBarrier();
 #endif
+        }
+
+        internal static unsafe TTo reinterpret_cast<TFrom, TTo>(ref TFrom source)
+        {
+            var sourcePtr = __makeref(source);
+
+            TTo dest = default(TTo);
+            var destPtr = __makeref(dest);
+            
+            *(void**)&destPtr = *(void**)&sourcePtr;
+
+            return __refvalue(destPtr,TTo);
+        }
+
+        internal static TTo static_cast<TFrom, TTo>(ref TFrom source)
+        {
+            return __refvalue(__makeref(source),TTo);
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = sizeof(int))]
+        internal struct Data32
+        {
+            [FieldOffset(0)]
+            public int Int32Value;
+            [FieldOffset(0)]
+            public float SingleValue;
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = sizeof(long))]
+        internal struct Data64
+        {
+            [FieldOffset(0)]
+            public long Int64Value;
+            [FieldOffset(0)]
+            public double DoubleValue;
         }
     }
 }

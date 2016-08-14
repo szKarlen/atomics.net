@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace System.Threading.Atomics
+﻿namespace System.Threading.Atomics
 {
     static class MemoryModelHelpers
     {
@@ -13,9 +7,15 @@ namespace System.Threading.Atomics
             return order >= MemoryOrder.Acquire && order <= MemoryOrder.AcqRel;
         }
 
-        public static bool IsSpported(this MemoryOrder order)
+        public static void ThrowIfNotSupported(this MemoryOrder order)
         {
-            return !(order < MemoryOrder.Acquire);
+            if (order == MemoryOrder.SeqCst || order == MemoryOrder.AcqRel || order == MemoryOrder.Relaxed) return;
+            
+            if (order == MemoryOrder.Acquire || order == MemoryOrder.Release)
+            {
+                throw new ArgumentException("Using Acquire or Release only in constructor is not allowed. Please specify either Relaxed, AcqRel or SeqCst.", "order");
+            }
+            throw new ArgumentException("Consume memory ordering semantics is not supported", "order");
         }
 
         public static int ToInt32(this bool target)

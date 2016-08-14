@@ -63,6 +63,12 @@
     <!-- A reference to the entire .NET Framework is automatically included -->
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AtomicIntegerArray.cs" />
+    <Compile Include="AtomicLongArray.cs" />
+    <Compile Include="AtomicReferenceArray.cs" />
+    <Compile Include="IAtomicArray.cs" />
+    <Compile Include="Int32Aligned.cs" />
+    <Compile Include="Int64Aligned.cs" />
     <Compile Include="Misc.cs" />
     <Compile Include="Platform.cs" />
     <Compile Include="Atomic.cs" />
@@ -71,9 +77,9 @@
     <Compile Include="AtomicLong.cs" />
     <Compile Include="AtomicReference.cs" />
     <Compile Include="IAtomic.cs" />
-    <Compile Include="IAtomicOperators.cs" />
     <Compile Include="MemoryOrder.cs" />
     <Compile Include="MemoryOrderHelpers.cs" />
+    <Compile Include="Pod.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
