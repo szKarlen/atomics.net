@@ -12,6 +12,11 @@ namespace System.Threading.Atomics
         {
             return Platform.Read(ref value);
         }
+
+        public static void Write<T>(ref T location, T value)
+        {
+            Platform.Write(ref location, ref value);
+        }
     }
 
     [AttributeUsage(AttributeTargets.Constructor | AttributeTargets.Method, Inherited = false)]
