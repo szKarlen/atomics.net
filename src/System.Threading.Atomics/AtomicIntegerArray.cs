@@ -14,7 +14,9 @@ namespace System.Threading.Atomics
     [DebuggerDisplay("Count = {Count}")]
     public class AtomicIntegerArray : IAtomicRefArray<int>, 
         ICollection<int>, 
+#if !NET40
         IReadOnlyCollection<int>, 
+#endif
         IStructuralComparable, 
         IStructuralEquatable
     {

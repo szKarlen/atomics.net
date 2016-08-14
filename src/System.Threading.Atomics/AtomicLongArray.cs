@@ -10,7 +10,9 @@ namespace System.Threading.Atomics
     [DebuggerDisplay("Count = {Count}")]
     public class AtomicLongArray : IAtomicRefArray<long>,
         ICollection<long>,
+#if !NET40
         IReadOnlyCollection<long>,
+#endif
         IStructuralComparable,
         IStructuralEquatable
     {
